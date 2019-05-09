@@ -1,0 +1,16 @@
+#+TITLE:    language.c README
+#+AUTHOR:   Jan Moringen
+#+EMAIL:    jmoringe@techfak.uni-bielefeld.de
+#+LANGUAGE: en
+
+#+OPTIONS:  toc:nil num:nil
+#+SEQ_TODO: TODO STARTED | DONE
+
+* TODO Introduction
+
+  This library provides parsers for the C programming language and its
+  preprocessor as described in [[https://web.archive.org/web/20181230041359if_/http://www.open-std.org/jtc1/sc22/wg14/www/abq/c17_updated_proposed_fdis.pdf][Annex A of SO/IEC 9899:2017]].
+
+* TODO Tutorial
+
+* TODO Dictionary
