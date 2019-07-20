@@ -1,0 +1,7 @@
+This directory contains infrastructure shared between the
+implementation of the preprocessor and the implementation of the
+"proper" C language.
+
+In particular, the =parser= directory contains grammar rules such as
+~identifier~ that are used in preprocessor grammar as well as the C
+grammar.
