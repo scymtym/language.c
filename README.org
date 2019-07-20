@@ -13,4 +13,36 @@
 
 * TODO Tutorial
 
+** TODO The Preprocessor Language
+
+*** TODO Parsing
+
+    #+BEGIN_SRC lisp :exports results :results silent
+      (ql:quickload '#:language.c.cpp.parser)
+    #+END_SRC
+
+    #+BEGIN_SRC lisp
+      (language.c.cpp.parser:parse #P"/usr/include/FlexLexer.h" 'list)
+    #+END_SRC
+
+*** TODO Evaluating Syntax Trees
+
+    #+BEGIN_SRC lisp
+      (let ((ast (language.c.cpp.parser:parse
+                  (format nil "#ifdef foo~@
+                               #define foo 1~@
+                               foo bar~@
+                               baz fez~@
+                               #endif~@
+                               ")
+                  (make-instance 'language.c.cpp.model::builder))))
+        (let ((e (make-instance 'language.c.cpp.evaluator::environment)))
+          (language.c.cpp.evaluator::evalute ast e *standard-output*)
+          e))
+
+      (parse "foo bar
+      " 'list :rule 'text-line)
+
+    #+END_SRC
+
 * TODO Dictionary
