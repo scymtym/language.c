@@ -16,7 +16,7 @@
 
 ;;; A.1.1 Lexical elements
 
-(deftokens (keyword-token t :whitespace           (* (or #\Space
+(deftokens (keyword t :whitespace           (* (or #\Space
                                                          #\Tab
                                                          parser.common-rules:c-style-comment/delimited
                                                          (and #\\ #\Newline)))
@@ -32,18 +32,18 @@
   |line| |error| |pragma|)
 
 (defrule punctuator-token ; TODO can be avoided if shared grammar makes a node
-    (and (! (and |#| keyword-token)) punctuator) ; TODO punctuactors eat newlines
+    (and (! (and punctuator-|#| keyword)) punctuator) ; TODO punctuactors eat newlines
   (:function second)
   (:lambda (which &bounds start end)
     (bp:node* (:punctuator :which which :bounds (cons start end)))))
 
 (defrule word-token
-    (and (! |#|) (+ (not (or whitespace new-line))))  ; TODO (not whitespace) seems suspicious
+    (and (! punctuator-|#|) (+ (not (or whitespace new-line))))  ; TODO (not whitespace) seems suspicious
   (:function second)
   (:text t))
 
 (defrule preprocessing-token
-    (and (! |endif|)
+    (and (! keyword-|endif|)
          (or header-name
              identifier
              pp-number
@@ -68,7 +68,7 @@
   (:constant :system))
 
 (defrule h-char-sequence
-    (+ (not (or #\newline #\>)))
+    (+ (not (or #\Newline #\>)))
   (:text t))
 
 (defrule q-header-name-start
@@ -76,7 +76,7 @@
   (:constant :local))
 
 (defrule q-char-sequence
-    (+ (not (or #\newline #\")))
+    (+ (not (or #\Newline #\")))
   (:text t))
 
 
@@ -102,7 +102,7 @@
            ".")))
 
 (defrule pp-number
-    (and (? |.|)
+    (and (? punctuator-|.|) ; TODO should maybe just be #\.
          parser.common-rules::integer-digits/decimal
          (* (or parser.common-rules::integer-digits/decimal
                 pp-number-suffix)))
@@ -134,7 +134,7 @@
         if-section
         control-line
         text-line
-        (and |#| non-directive)))
+        (and punctuator-|#| non-directive)))
 
 (defrule top-level-comment
     (and (* (or #\Space #\Tab)) comment (* (or #\Space #\Tab)))
@@ -153,8 +153,8 @@
       (bp:? :else else-group))))
 
 (defrule if-group
-    (and |#| (or (and (or |ifdef| |ifndef|) (and identifier)) ; TODO should this also be (+ pp-token)
-                 (and |if|                  #|constant-expression|# (+ pp-token)))
+    (and punctuator-|#| (or (and (or keyword-|ifdef| keyword-|ifndef|) (and identifier)) ; TODO should this also be (+ pp-token)
+                            (and keyword-|if|                  #|constant-expression|# (+ pp-token)))
          new-line (? (and (! (or elif-groups else-group)) group)))
   (:function rest)
   (:destructure ((keyword expression) newline (&optional guard group))
@@ -165,15 +165,15 @@
     (+ elif-group))
 
 (defrule elif-group
-    (and |#| |elif| (+ pp-token) #|constant-expression|#
+    (and punctuator-|#| keyword-|elif| (+ pp-token) #|constant-expression|#
          new-line (? (and (! (or elif-groups else-group)) group)) (? group))) ; TODO identical to if-group
 
 (defrule else-group
-    (and |#| |else| new-line (? group))
+    (and punctuator-|#| keyword-|else| new-line (? group))
   (:function fourth))
 
 (defrule endif
-    (and |#| |endif| (? parser.common-rules:c-style-comment/rest-of-line) new-line)
+    (and punctuator-|#| keyword-|endif| (? parser.common-rules:c-style-comment/rest-of-line) new-line)
   (:function second))
 
 ;;; Control lines
@@ -187,15 +187,15 @@
        ,@body)))
 
 (defrule control-line
-    (and (and) #+no (! |endif|)
-         |#| (or include-line
+    (and (and) #+no (! keyword-|endif|)
+         punctuator-|#| (or include-line
                  define-identifier-line
                  undef-line
                  line-line
                  error-line
                  pragma-line
                  (and))
-         (* (and (! new-line) whitespace))
+         (* whitespace/same-line)
          new-line)
 
   #+no (and |#| (or
@@ -210,13 +210,13 @@
                  new-line))
   (:function third))
 
-(define-control-line-rule include-line |include|
+(define-control-line-rule include-line keyword-|include|
     (and (+ pp-token))
   ((filename)
    (bp:node* (:include :filename filename :bounds (cons start end)))))
 
-(define-control-line-rule define-identifier-line |define| ; TODO lparen stuff not handled?
-    (and identifier (? (and language.c.shared.parser::|(| identifier-list language.c.shared.parser::|)|))
+(define-control-line-rule define-identifier-line keyword-|define| ; TODO lparen stuff not handled?
+    (and identifier (? (and punctuator-|(| identifier-list punctuator-|)|))
          (* pp-token))
   ((name (&optional open parameters close) replacement)
    (declare (ignore open close))
@@ -229,22 +229,22 @@
          (1 :name        name)
          (* :replacement replacement)))))
 
-(define-control-line-rule undef-line |undef|
+(define-control-line-rule undef-line keyword-|undef|
     (and identifier)
   ((name)
    (bp:node* (:undef :name name :bounds (cons start end)))))
 
-(define-control-line-rule line-line |line|
+(define-control-line-rule line-line keyword-|line|
     (and (+ pp-token))
   ((tokens)
    (bp:node* (:line :tokens tokens :bounds (cons start end)))))
 
-(define-control-line-rule error-line |error|
+(define-control-line-rule error-line keyword-|error|
   (and (* pp-token))
   ((message)
    (bp:node* (:error :message message :bounds (cons start end)))))
 
-(define-control-line-rule pragma-line |pragma|
+(define-control-line-rule pragma-line keyword-|pragma|
     (and (* pp-token))
   ((tokens)
    (bp:node* (:pragma :tokens tokens :bounds (cons start end)))))
@@ -260,20 +260,20 @@
       (* :token tokens))))
 
 (defrule non-directive
-    (and (! keyword-token) (+ pp-token) new-line)
+    (and (! keyword) (+ pp-token) new-line)
   (:function second))
 
 (defrule pp-token
-    (and (* (and (! new-line) whitespace)) ;  TODO define our own whitespace rule?
+    (and (* whitespace/same-line) ;  TODO define our own whitespace rule?
          preprocessing-token
-         (* (and (! new-line) whitespace)))
+         (* whitespace/same-line))
   (:function second))
 
 (defrule new-line
     (or #\newline <end-of-input>))
 
 (defrule on-off-switch
-    (or |ON| |OFF| |DEFAULT|))
+    (or keyword-|on| keyword-|off| keyword-|default|))
 
 (bp:with-builder ('list)
   (esrap:parse 'preprocessing-file
@@ -292,7 +292,7 @@
 
 (bp:with-builder ('list)
   (esrap:parse 'preprocessing-file
-               "# if (defined __cplusplus						\
+               "# if (defined __cplusplus						\\
       || (defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L))
 #  define __inline	inline
 # else

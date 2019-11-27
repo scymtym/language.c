@@ -22,14 +22,15 @@
   (:import-from #:language.c.shared.parser
    #:deftokens
 
-   #:whitespace
+   #:whitespace #:whitespace/same-line
    #:comment
 
    #:digit
    #:identifier-nondigit
-   #:|.| #:sign
+   #:punctuator-|.| #:sign
 
-   #:|#| ; TODO why is this shared?
+   #:punctuator-|(| #:punctuator-|)|
+   #:punctuator-|#| ; TODO why is this shared?
    ; #:|if| #:|else|
 
    #:identifier-list
