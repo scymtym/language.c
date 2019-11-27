@@ -8,25 +8,36 @@
 
 (cl:in-package #:language.c.shared.parser)
 
+(defun disambiguate (string other-strings)
+  (if-let ((confusable (find-if (lambda (other-string)
+                                  (and (not (eq string other-string))
+                                       (starts-with-subseq string other-string)))
+                                other-strings)))
+    `(and ,string (! ,(subseq confusable (length string))))
+    string))
+
 (defmacro deftokens ((name resultp &key (whitespace          '(* whitespace))
                                         requires-separation?)
                      &body symbols)
-  `(progn
-     (defrule ,name (or ,@symbols))
-     ,@(mapcar (lambda (token-name)
-                 (let ((rule-name (symbolicate name '#:- token-name))
-                       (result    (if resultp
-                                      (make-keyword (string-upcase token-name))
-                                      nil))
-                       (string    (string token-name)))
-                   `(defrule ,rule-name
-                        (and ,whitespace
-                             ,string
-                             ,@(when requires-separation?
-                                 '((esrap:! (or identifier-nondigit digit))))
-                             ,whitespace)
-                      (:constant ,result))))
-               symbols)))
+  (let ((strings    (map 'list #'string symbols))
+        (rule-names '()))
+    `(progn
+       ,@(mapcar (lambda (token-string token-name)
+                   (let ((rule-name (symbolicate name '#:- token-name))
+                         (result    (if resultp
+                                        (make-keyword (string-upcase token-name))
+                                        nil))
+                         (string    (disambiguate token-string strings)))
+                     (push rule-name rule-names)
+                     `(defrule ,rule-name
+                          (and ,whitespace
+                               ,string
+                               ,@(when requires-separation?
+                                   '((esrap:! (or identifier-nondigit digit))))
+                               ,whitespace)
+                        (:constant ,result))))
+                 strings symbols)
+       (defrule ,name (or ,@(reverse rule-names))))))
 
 (defmacro define-bracket-rule (name (open close) expression &body options)
   `(defrule ,name

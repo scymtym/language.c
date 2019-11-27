@@ -265,7 +265,9 @@
   ;; Two things are noteworthy here:
   ;; 1. Some of the tokens (such as "(", ";", ",") need escaping
   ;; 2. Order matters. An earlier entry must not be a prefix of a
-  ;;    later entry.
+  ;;    later entry. TODO Not true since `deftokens' currently
+  ;;    generates disambiguations such as (and "&" (! "&")) but maybe
+  ;;    we can avoid that.
   [ ] |(| |)| { } |.| ->
   / % << >> <= >= < > == != ^ && \|\|
   ++ -- & \| * + - ~ !
@@ -342,12 +344,9 @@
   :skippable?-expression (and)
   :node-kind             :unary-expression)
 
-(deftokens (unary-operator t)
-    #+later |&| |*| |+| |-| |~| |!|)
-
-(DEFRULE & ; TODO
-    (AND (* WHITESPACE) #\& (esrap:! #\&) (* WHITESPACE))
-  (:CONSTANT :&))
+(defrule unary-operator
+    (or punctuator-& punctuator-* punctuator-+ punctuator--
+        punctuator-~ punctuator-!))
 
 (defrule cast-expression
     (or                      ; (and |(| type-name |)| cast-expression)
@@ -356,7 +355,7 @@
 (parser.common-rules.operators:define-operator-rules
     (:skippable?-expression (and)
      :binary-node-kind      :binary-expression)
-  (3 conditional-expression    punctuator-|?| punctuator-|:|)
+  (3 conditional-expression    punctuator-? punctuator-|:|)
   (2 logical-or-expression     punctuator-\|\|)
   (2 logical-and-expression    punctuator-&&)
   (2 or-expression             punctuator-\|)

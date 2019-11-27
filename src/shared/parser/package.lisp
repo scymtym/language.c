@@ -14,7 +14,8 @@
 
   (:import-from #:esrap
    #:defrule #:&bounds
-   #:character-ranges #:? #:~)
+   #:character-ranges #:~
+   #:? #:!)
 
   ;; Utilities
   (:export
