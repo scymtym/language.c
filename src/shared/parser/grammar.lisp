@@ -372,11 +372,3 @@
 (defrule constant-expression
     conditional-expression
   (:use-cache nil))
-
-(let ((*floating-point-constants?* t))
-  (bp:with-builder ('list)               ; TODO move to tests
-    (esrap:parse 'constant-expression "( 0 /*hi*/ || ( 0 && + 0.1 >= 201112L ) )")))
-
-(let ((*floating-point-constants?* t))
-  (bp:with-builder ('list)               ; TODO move to tests
-    (esrap:parse 'constant-expression "('foo' == 0x0.1p1)")))

@@ -22,3 +22,13 @@
   ("1ul" '(:constant
            ()
            :type :integer :value 1 :size :long :unsigned? :unsigned :bounds (0 . 3))))
+
+(test rule.constant-expression
+
+  (let ((language.c.shared.parser::*floating-point-constants?* t))
+    (architecture.builder-protocol:with-builder ('list)
+      (finishes (esrap:parse 'constant-expression "( 0 /*hi*/ || ( 0 && + 0.1 >= 201112L ) )"))))
+
+  (let ((language.c.shared.parser::*floating-point-constants?* t))
+    (architecture.builder-protocol:with-builder ('list)
+      (esrap:parse 'constant-expression "('foo' == 0x0.1p1)"))))
