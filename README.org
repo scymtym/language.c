@@ -6,26 +6,85 @@
 #+OPTIONS:  toc:nil num:nil
 #+SEQ_TODO: TODO STARTED | DONE
 
-* TODO Introduction
+* STARTED Introduction
 
   This library provides parsers for the C programming language and its
   preprocessor as described in [[https://web.archive.org/web/20181230041359if_/http://www.open-std.org/jtc1/sc22/wg14/www/abq/c17_updated_proposed_fdis.pdf][Annex A of SO/IEC 9899:2017]].
 
-* TODO Tutorial
+  This library uses package-local nicknames. It has been tested in
+  SBCL.
 
-** TODO The Preprocessor Language
+* STARTED Tutorial
 
-*** TODO Parsing
+  This section discusses different modules provided by the library:
+
+  + [[*The Interface Package]] :: This module provides a high-level
+       interface consisting of convenience functions for parsing and
+       evaluating CPP or C inputs or doing multiple of those things at
+       once.
+
+  + [[*The Preprocessor Language]] :: This module provides a parser, a
+       meta-model and an evaluator for the C preprocessor language.
+
+  + [[*The C Language]] :: This module provides a parser and a meta-model.
+
+** TODO The Interface Package
+
+** STARTED The Preprocessor Language
+
+*** STARTED Parsing
+
+    The ability to parse the C preprocessor language is provided by
+    the ~language.c.cpp.parser~ systems.
 
     #+BEGIN_SRC lisp :exports results :results silent
       (ql:quickload '#:language.c.cpp.parser)
     #+END_SRC
 
-    #+BEGIN_SRC lisp
-      (language.c.cpp.parser:parse #P"/usr/include/FlexLexer.h" 'list)
+    After loading that system, a inputs such as strings and files can
+    be parsed using the ~parse~ generic function:
+
+    #+BEGIN_SRC lisp :exports both :results value verbatim
+      (language.c.cpp.parser:parse "#define foo 1 + 2" 'list)
     #+END_SRC
 
-*** TODO Evaluating Syntax Trees
+    #+RESULTS:
+    #+begin_example
+    (:GROUP
+     (:PART
+      (((:DEFINE NIL :NAME (:IDENTIFIER NIL :NAME "foo" :BOUNDS (8 . 11))
+         :REPLACEMENT
+         ((:NUMBER NIL :VALUE "1" :BOUNDS (12 . 13))
+          (:PUNCTUATOR NIL :WHICH :+ :BOUNDS (14 . 16))
+          (:NUMBER NIL :VALUE "2" :BOUNDS (16 . 17)))
+         :BOUNDS (1 . 17)))))
+     :BOUNDS (0 . 17))
+    NIL
+    T
+    #+end_example
+
+    The second argument is a "builder" which controls the construction
+    of the parse result (The "builder" concept, related protocols and
+    their implementation can be found in the
+    [[https://github.com/scymtym/architecture.builder-protocol][architecture.builder-protocol]] system). In the example above, the
+    ~list~ builder has been used to produce a simple list-based
+    representation of the parse tree.
+
+    Another possibility is producing a parse tree consisting of
+    instances of classes defined in the ~language.c.cpp.model~
+    package:
+
+    #+BEGIN_SRC lisp :exports both :results value verbatim
+      (language.c.cpp.parser:parse "#define foo 1 + 2"
+                                   (make-instance 'language.c.cpp.model:builder))
+    #+END_SRC
+
+    #+RESULTS:
+    : #<LANGUAGE.C.CPP.MODEL:GROUP {10023739B3}>
+    : NIL
+    : T
+
+*** STARTED Evaluating Syntax Trees
 
     #+BEGIN_SRC lisp
       (let ((ast (language.c.cpp.parser:parse
@@ -35,14 +94,18 @@
                                baz fez~@
                                #endif~@
                                ")
-                  (make-instance 'language.c.cpp.model::builder))))
-        (let ((e (make-instance 'language.c.cpp.evaluator::environment)))
+                  (make-instance 'language.c.cpp.model:builder)))
+            ((environment (make-instance 'language.c.cpp.evaluator::environment))))
+        (let ()
           (language.c.cpp.evaluator::evalute ast e *standard-output*)
           e))
 
-      (parse "foo bar
-      " 'list :rule 'text-line)
-
     #+END_SRC
+
+** TODO The C language
+
+*** TODO Parsing
+
+*** TODO Evaluating
 
 * TODO Dictionary
