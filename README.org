@@ -9,7 +9,8 @@
 * STARTED Introduction
 
   This library provides parsers for the C programming language and its
-  preprocessor as described in [[https://web.archive.org/web/20181230041359if_/http://www.open-std.org/jtc1/sc22/wg14/www/abq/c17_updated_proposed_fdis.pdf][Annex A of SO/IEC 9899:2017]].
+  preprocessor as described in [[https://web.archive.org/web/20181230041359if_/http://www.open-std.org/jtc1/sc22/wg14/www/abq/c17_updated_proposed_fdis.pdf][Annex A of SO/IEC 9899:2017]]. For the
+  preprocessor language, it also provides an interpreter.
 
   This library uses package-local nicknames. It has been tested in
   SBCL.
@@ -28,7 +29,15 @@
 
   + [[*The C Language]] :: This module provides a parser and a meta-model.
 
-** TODO The Interface Package
+** STARTED The Interface Package
+
+   This module contains convenience functions for preprocessing and
+   parsing C code. The corresponding ASDF system and package are both
+   called ~langauge.c.interface~.
+
+   #+BEGIN_SRC lisp :exports results :results silent
+     (ql:quickload '#:language.c.interface)
+   #+END_SRC
 
 ** STARTED The Preprocessor Language
 
@@ -97,9 +106,8 @@
                   (make-instance 'language.c.cpp.model:builder)))
             ((environment (make-instance 'language.c.cpp.evaluator::environment))))
         (let ()
-          (language.c.cpp.evaluator::evalute ast e *standard-output*)
+          (language.c.cpp.evaluator:evaluate ast e *standard-output*)
           e))
-
     #+END_SRC
 
 ** TODO The C language
