@@ -274,28 +274,3 @@
 
 (defrule on-off-switch
     (or keyword-|on| keyword-|off| keyword-|default|))
-
-(bp:with-builder ('list)
-  (esrap:parse 'preprocessing-file
-               "#define __ptr_t void *
-
-1"))
-
-#|
-#ifdef __cplusplus
-# define __END_DECLS foo
-#else
-# define __END_DECLS bar
-#endif
-|#
-
-
-(bp:with-builder ('list)
-  (esrap:parse 'preprocessing-file
-               "# if (defined __cplusplus						\\
-      || (defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L))
-#  define __inline	inline
-# else
-#  define __inline		/* No inline functions.  */
-# endif
-"))

@@ -26,7 +26,10 @@
       :else (()))
      :kind :ifdef :bounds (0 . 120))))
 
-(parse "#if defined __USE_XOPEN || defined __USE_XOPEN2K8
+(test rule.if-section.2
+
+  (finishes
+    (parse "#if defined __USE_XOPEN || defined __USE_XOPEN2K8
 # ifdef __GNUC__
 #  ifndef _VA_LIST_DEFINED
 typedef __gnuc_va_list va_list;
@@ -36,7 +39,17 @@ typedef __gnuc_va_list va_list;
 #  include <stdarg.h>
 # endif
 #endif
-" 'list)
+"
+           'list :rule 'if-section))
+
+  (finishes
+   (parse "#ifdef __cplusplus
+# define __END_DECLS foo
+#else
+# define __END_DECLS bar
+#endif
+"
+          'list :rule 'if-section)))
 
 (define-rule-test constant-expression
   ("0 && 0"
@@ -60,11 +73,30 @@ typedef __gnuc_va_list va_list;
   )
 
 
-#+later (bp:with-builder ('list)
-  (esrap:parse 'preprocessing-file  "#define __TIMER_T_TYPE		void *
-#define __BLKSIZE_T_TYPE
-"))
+(test rule.preprocessing-file
 
-#+later (bp:with-builder ('list)
-  (esrap:parse 'preprocessing-file "# define __GNUC_PREREQ(maj, min) \\
-	((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))"))
+  (finishes
+    (parse "#define __TIMER_T_TYPE		void *
+#define __BLKSIZE_T_TYPE
+" 'list :rule 'preprocessing-file))
+
+  (finishes
+    (parse "# define __GNUC_PREREQ(maj, min) \\
+	((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))"
+           'list :rule 'preprocessing-file))
+
+  (finishes
+    (parse "# if (defined __cplusplus						\\
+      || (defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L))
+#  define __inline	inline
+# else
+#  define __inline		/* No inline functions.  */
+# endif
+"
+           'list :rule 'preprocessing-file))
+
+  (finishes
+    (parse "#define __ptr_t void *
+
+1"
+           'list :rule 'preprocessing-file)))

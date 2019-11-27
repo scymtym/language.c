@@ -46,6 +46,8 @@
    #:parse)
 
   (:export
+   #:preprocessing-file
+
    #:group
 
    #:if-section
