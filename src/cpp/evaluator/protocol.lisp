@@ -35,13 +35,12 @@
 (defgeneric evaluate (element environment target)
   (:argument-precedence-order environment element target)
   (:documentation
-   "TODO"))
+   "Evaluate ELEMENT in ENVIRONMENT writing the result to TARGET."))
 
 ;;; Default behavior
 
 (defmethod evaluate ((element sequence) (environment t) (target stream))
-  (let ((first?        t)
-        (pending-calls nil))
+  (let ((first? t))
     (labels ((rec (remainder)
                (if first?
                    (setf first? nil)
@@ -49,7 +48,6 @@
                (when (consp remainder)
                  (destructuring-bind (first . rest) remainder
                    (let ((result (evaluate first environment target)))
-                     ; (clouseau:inspect (list remainder first result))
                      (typecase result
                        (string ; TODO currently needed for identifiers that evaluate to strings
                         (write-string result target)
@@ -61,39 +59,7 @@
                         (rec (append (coerce result 'list) rest)))
                        (t
                         (rec rest))))))))
-      (rec (coerce element 'list)))
-    #+no (map nil (lambda (node)
-                    (flet ((maybe-space ()
-                             (if first?
-                                 (setf first? nil)
-                                 (write-char #\Space target))))
-                      (maybe-space)
-                      (let ((result (evaluate node environment target)))
-                        (typecase result
-                          (string   (write-string result target))
-                                        ; (function expansion)
-                          (t        (evaluate expansion environment target))))
-                      #+no (cond (pending-calls
-                                  (cond ((and (typep node 'model::punctuator)
-                                              (eq (model::which node) :|(|)))
-                                        ((and (typep node 'model::punctuator)
-                                              (eq (model::which node) :|,|)))
-                                        ((and (typep node 'model::punctuator)
-                                              (eq (model::which node) :|)|))
-                                         (maybe-space)
-                                         (destructuring-bind (function . arguments)
-                                             (first pending-calls)
-                                           (funcall function (reverse arguments) target)))
-                                        (t
-                                         (push (with-output-to-string (stream)
-                                                 (evaluate node environment stream))
-                                               (cdr (first pending-calls))))))
-                                 (t
-                                  (maybe-space)
-                                  (let ((result (evaluate node environment target)))
-                                    (when (functionp result)
-                                      (push (cons result '()) pending-calls)))))))
-              element)))
+      (rec (coerce element 'list)))))
 
 (defmethod resolve-include ((environment t) (kind t) (name t))
   nil)

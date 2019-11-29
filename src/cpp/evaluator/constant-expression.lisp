@@ -1,4 +1,4 @@
-;;;; constant-expression.lisp --- .
+;;;; constant-expression.lisp --- Evaluation of constant expressions.
 ;;;;
 ;;;; Copyright (C) 2019 Jan Moringen
 ;;;;
@@ -17,7 +17,7 @@
                (:unary-expression
                 (let ((operator (getf (cddr node) :operator))
                       (operand  (first (first (getf (second node) :operand)))))
-                  (case operator
+                  (ecase operator
                     (:!
                      (- 1 (bit-boolean (rec operand)))))))
                (:binary-expression
@@ -27,7 +27,7 @@
                   (case operator
                     (:&&
                      (if (find 0 operands :key #'rec) 0 1))
-                    (:|\|\||
+                    (:\|\|
                      (if (find 1 operands :key #'rec) 1 0))
                     (t
                      (if (apply (ecase operator
@@ -41,9 +41,8 @@
                                   (:+  '+))
                                 (map 'list #'rec operands))
                          1 0)))))
-               (:ternary-operator ; TODO should be expression
+               (:ternary-expression
                 (let ((operator1 (getf (cddr node) :operator1))
-                      (operator2 (getf (cddr node) :operator2))
                       (operands  (map 'list #'first
                                       (getf (second node) :operand))))
                   (ecase operator1
