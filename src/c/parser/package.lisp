@@ -14,7 +14,8 @@
 
   (:import-from #:esrap
    #:defrule #:&bounds
-   #:character-ranges #:?)
+   #:character-ranges
+   #:? #:&)
 
   (:import-from #:language.c.shared.parser
    #:deftokens
@@ -29,10 +30,13 @@
    #:integer-constant
    #:string-literal
 
-   #:punctuator-[ #:punctuator-] #:punctuator-|(| #:punctuator-|)|
-   #:punctuator-{ #:punctuator-} #:punctuator-|.| #:punctuator-->
+   #:punctuator-[   #:punctuator-]   #:punctuator-|(| #:punctuator-|)|
+   #:punctuator-{   #:punctuator-}   #:punctuator-|.| #:punctuator-->
+
+   #:punctuator-++  #:punctuator-&
+   #:punctuator-*   #:punctuator-+   #:punctuator--   #:punctuator-~   #:punctuator-!
+
    #:punctuator-|,| #:punctuator-|;| #:punctuator-|:|
-   #:punctuator-& #:punctuator-~ #:punctuator-!
 
    #:conditional-expression
    #:constant-expression)

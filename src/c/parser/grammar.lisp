@@ -14,11 +14,11 @@
 ;;; A.1.1 Lexical elements
 
 (defrule token
-    (or keyword-token identifier constant string-literal punctator))
+    (or keyword identifier constant string-literal punctuator))
 
 ;;; A.1.2 Keywords
 
-(deftokens (keyword-token t)
+(deftokens (keyword t)
   |auto|          |extern|        |short|         |while|
   |break|         |float|         |signed|        |_Alignas|
   |case|          |for|           |sizeof|        |_Alignof|
@@ -37,7 +37,7 @@
     (or identifier
         constant
         string-literal
-        |(expression)|
+        expression/parentheses
         generic-selection))
 
 (defrule primary-expression/?ws
@@ -45,19 +45,19 @@
   (:function first))
 
 (defrule generic-selection
-    (and |_Generic| |(| assignment-expression |,| generic-assoc-list |)|))
+    (and keyword-|_Generic| punctuator-|(| assignment-expression punctuator-|,| generic-assoc-list punctuator-|)|))
 
 (defrule generic-assoc-list
     (+ generic-association))
 
 (defrule generic-association
-    (and (or |default| type-name) |:| assignment-expression))
+    (and (or |default| type-name) punctuator-|:| assignment-expression))
 
 ;; TODO much of the postfix stuff is duplicated in the shared grammar
 (defrule postfix-expression
     (or postfix-expression/primary
-        (and |(type-name)|
-             punctuator-{ initializer-list (* |,|) punctuator-}
+        (and type-name/parenthses
+             punctuator-{ initializer-list (* punctuator-|,|) punctuator-}
              postfix-expression*)))
 
 (defrule postfix-expression/primary
@@ -69,10 +69,10 @@
     ;; TODO this was (* ...) in the original grammar
     (+ (or subscript
            arguments
-           (and |.| identifier)
-           (and |->| identifier)
+           (and punctuator-|.| identifier)
+           (and punctuator--> identifier)
            postfix-increment
-           (and |-|))))
+           (and punctuator--))))
 
 (defrule subscript
     (and punctuator-[ expression punctuator-])
@@ -84,39 +84,37 @@
         (1 :index      index)))))
 
 (defrule arguments
-    (and punctator-|(| (* argument-expression-list) punctator-|)|))
+    (and punctuator-|(| (* argument-expression-list) punctuator-|)|))
 
 (defrule argument-expression-list
     (and assignment-expression (* (and |,| argument-expression))))
 
 (defrule postfix-increment
-    |++|
+    punctuator-++
   (:lambda (operator &bounds start end)
     (declare (ignore operator))
     (lambda (expression)
       (bp:node* (:postfix-increment :bounds (cons start end))
         (1 :expression expression)))))
 
-
-
 (defrule unary-expression
     (or postfix-expression
-        (and |++| unary-expression)
-        (and |-| unary-expression)
+        (and punctuator-++ unary-expression)
+        (and punctuator-- unary-expression)
         (and unary-operators cast-expression)
-        (and |sizeof| unary-expression)
-        (and |sizeof| |(type-name)|)
-        (and |_Alignof| |(type-name)|)))
+        (and keyword-|sizeof| unary-expression)
+        (and keyword-|sizeof| type-name/parenthses)
+        (and keyword-|_Alignof| type-name/parenthses)))
 
 #+no (deftokens (unary-operators t) ; TODO these are still CL symbols. can't do this
     |&| |*| |+| |-| |~| |!|)
 
 (defrule unary-operators
-    (or |&| |*| |+| |-| |~| |!|))
+    (or punctuator-& punctuator-* punctuator-+ punctuator-- punctuator-~ punctuator-!))
 
 (defrule cast-expression
     (or unary-expression
-        (and |(| type-name |)| cast-expression)))
+        (and punctuator-|(| type-name punctuator-|)| cast-expression)))
 
 (defrule assignment-expression
     ;; TODO POSTFIX-EXPRESSION is not here in the original grammar
@@ -137,8 +135,7 @@
 (define-separator-list-rule expression
   assignment-expression punctuator-|,|)
 
-;; TODO unused?
-(define-bracket-rule expression-parentheses (punctator-|(| punctator-|)|)
+(define-bracket-rule expression/parentheses (punctuator-|(| punctuator-|)|)
     expression)
 
 
@@ -149,7 +146,7 @@
         static_assert-declaration))
 
 (defrule declaration//
-    (and declaration-specifiers (? init-declarator-list) punctator-|;|)
+    (and declaration-specifiers (? init-declarator-list) punctuator-|;|)
   (:destructure (specifiers inits semicolon)
     (declare (ignore semicolon))
     (list :declaration specifiers inits)))
@@ -162,7 +159,7 @@
            alignment-specifier)))
 
 (define-separator-list-rule init-declarator-list
-  init-declarator punctator-|,|)
+  init-declarator punctuator-|,|)
 
 #+old (defrule init-declarator-list
     (and init-declarator (* init-declarator-list*)))
@@ -176,25 +173,25 @@
         (and declarator |=| initializer)))
 
 (defrule storage-class-specifier
-    (or |typedef|
-        |extern|
-        |static|
-        |_Thread_local|
-        |auto|
-        |register|))
+    (or keyword-|typedef|
+        keyword-|extern|
+        keyword-|static|
+        keyword-|_Thread_local|
+        keyword-|auto|
+        keyword-|register|))
 
 (defrule type-specifier
-    (or |void|
-        |char|
-        |short|
-        |int|
-        |long|
-        |float|
-        |double|
-        |signed|
-        |unsigned|
-        |_Bool|
-        |_Complex|
+    (or keyword-|void|
+        keyword-|char|
+        keyword-|short|
+        keyword-|int|
+        keyword-|long|
+        keyword-|float|
+        keyword-|double|
+        keyword-|signed|
+        keyword-|unsigned|
+        keyword-|_Bool|
+        keyword-|_Complex|
         atomic-type-specifier
         struct-or-union-specifier
         enum-specifier
@@ -202,11 +199,11 @@
         ))
 
 (defrule struct-or-union-specifier
-    (or (and struct-or-union (? identifier) { struct-declaration-list })
+    (or (and struct-or-union (? identifier) punctuator-{ struct-declaration-list punctuator-})
         (and struct-or-union identifier)))
 
 (defrule struct-or-union
-    (or |struct| |union|))
+    (or keyword-|struct| keyword-|union|))
 
 (defrule struct-declaration-list
     (+ struct-declaration))
@@ -225,12 +222,12 @@
     (+ struct-declarator))
 
 (defrule struct-declarator
- (or (and (? declarator) |:| constant-expression)
+ (or (and (? declarator) punctuator-|:| constant-expression)
      declarator))
 
 (defrule enum-specifier
-    (and |enum| (or (and (? identifier) { enumerator-list (? |,|) })
-                    (and identifier))))
+    (and keyword-|enum| (or (and (? identifier) punctuator-{ enumerator-list (? punctuator-|,|) punctuator-})
+                            (and identifier))))
 
 (defrule enumerator-list
     (+ enumerator))
@@ -240,35 +237,35 @@
         (and enumeration-constant punctuator-|=| constant-expression)))
 
 (defrule atomic-type-specifier
-    (and |_Atomic| |(| type-name |)|))
+    (and keyword-|_Atomic| punctuator-|(| type-name punctuator-|)|))
 
 (defrule type-qualifier
-    (or |const| |restrict| |volatile| |_Atomic|))
+    (or keyword-|const| keyword-|restrict| keyword-|volatile| keyword-|_Atomic|))
 
 (defrule function-specifier
-    (or |inline| |_Noreturn|))
+    (or keyword-|inline| keyword-|_Noreturn|))
 
 (defrule alignment-specifier
-    (and |_Alignas| |(| (or type-name constant-expression) |)|))
+    (and keyword-|_Alignas| punctuator-|(| (or type-name constant-expression) punctuator-|)|))
 
 (defrule declarator
     (and (? pointer) direct-declarator))
 
 (defrule direct-declarator
     (and (? (or identifier
-                (and |(| declarator |)|)))
+                (and punctuator-|(| declarator punctuator-|)|)))
          direct-declarator*))
 
 (defrule direct-declarator*
-    (* (or (and [ (? type-qualifier-list) (? assignment-expression) ])
-           (and [ |static| (? type-qualifier-list) assignment-expression ])
-           (and [ type-qualifier-list |static| assignment-expression ])
-           (and [ (? type-qualifier-list) |*|) ; not #\] ?
+    (* (or (and punctuator-[ (? type-qualifier-list) (? assignment-expression) punctuator-])
+           (and punctuator-[ keyword-|static| (? type-qualifier-list) assignment-expression punctuator-])
+           (and punctuator-[ type-qualifier-list |static| assignment-expression punctuator-])
+           (and punctuator-[ (? type-qualifier-list) punctuator-*) ; TODO not #\] ?
            parameter-type-list
-           (and |(| (? identifier-list) |)| ))))
+           (and punctuator-|(| (? identifier-list) punctuator-|)|))))
 
 (defrule pointer
-    (and punctator-* (? type-qualifier-list) (? pointer))
+    (and punctuator-* (? type-qualifier-list) (? pointer))
   (:function rest))
 
 (defrule type-qualifier-list
@@ -279,7 +276,7 @@
         parameter-list))
 
 (define-separator-list-rule parameter-list
-  parameter-declaration punctator-|,|)
+  parameter-declaration punctuator-|,|)
 
 (defrule parameter-declaration
     (and declaration-specifiers (or declarator
@@ -304,11 +301,11 @@
 (defrule direct-abstract-declarator
     (or (and |(| abstract-declarator |)|)
         (and (? direct-abstract-declarator)
-             (or (and [ (? type-qualifier-list) (? assignment-expression) ])
-                 (and [ |static| (? type-qualifier-list) assignment-expression ])
-                 (and [ type-qualifier-list |static| assignment-expression ])
-                 (and [ |*| ])
-                 (and |(| (? parameter-type-list) |)|)))))
+             (or (and punctuator-[ (? type-qualifier-list) (? assignment-expression) punctuator-])
+                 (and punctuator-[ keyword-|static| (? type-qualifier-list) assignment-expression punctuator-])
+                 (and punctuator-[ type-qualifier-list keyword-|static| assignment-expression punctuator-])
+                 (and punctuator-[ punctuator-* punctuator-])
+                 (and punctuator-|(| (? parameter-type-list) punctuator-|)|)))))
 
 (defrule typedef-name
     identifier)
@@ -356,7 +353,7 @@
       (1 :member member))))
 
 (defrule static_assert-declaration
-    (and |_Static_assert| |(| constant-expression |,| string-listeral |)| punctuator-|;|))
+    (and keyword-|_Static_assert| punctuator-|(| constant-expression punctuator-|,| string-listeral punctuator-|)| punctuator-|;|))
 
 
 ;;; A.2.3 Statements
@@ -370,9 +367,10 @@
         jump-statement))
 
 (defrule labeled-statement
-    (or (and identifier punctuator-|:| statement)
-        (and |case| constant-expression punctuator-|:| statement)
-        (and |default| punctuator-|:| statement)))
+    (and (or (and keyword-|case| constant-expression)
+             (and keyword-|default|)
+             (and identifier))
+         punctuator-|:| statement))
 
 (define-bracket-rule compound-statement (punctuator-{ punctuator-})
     (* block-item/?s))
@@ -386,14 +384,14 @@
   (:function first))
 
 (defrule expression-statement
-    (and (? expression) (* (or #\Space #\Tab #\Newline)) |;|) ; HACK whitespace
+    (and (? expression) (* (or #\Space #\Tab #\Newline)) punctuator-|;|) ; HACK whitespace
   (:function first))
 
 (defrule selection-statement
     (or if-statement switch-statement))
 
 (defrule if-statement
-    (and |if| |(expression)| statement (? (and |else| statement)))
+    (and keyword-|if| expression/parentheses statement (? (and keyword-|else| statement)))
   (:destructure (keyword1 test then &optional keyword2 else
                  &bounds start end)
     (declare (ignore keyword1 keyword2))
@@ -403,7 +401,7 @@
       (bp:? :else else))))
 
 (defrule switch-statement
-    (and |switch| expression/parentheses statement)
+    (and keyword-|switch| expression/parentheses statement)
   (:function rest)
   (:destructure (value body &bounds start end)
     (bp:node* (:switch-statement :bounds (cons start end))
@@ -416,7 +414,7 @@
         for-statement))
 
 (defrule while-statement
-    (and |while| |(expression)| statement)
+    (and keyword-|while| expression/parentheses statement)
   (:function rest)
   (:destructure (keyword test body &bounds start end)
     (bp:node* (:while-statement :bounds (cons start end))
@@ -424,7 +422,7 @@
       (1 :body body))))
 
 (defrule do-statement
-    (and |do| statement |while| |(expression)| |;|)
+    (and keyword-|do| statement keyword-|while| expression/parentheses punctuator-|;|)
   (:destructure (keyword1 body keyword2 test semicolon &bounds start end)
     (declare (ignore keyword1 keyword2 semicolon))
     (bp:node* (:do-statement :bounds (cons start end))
@@ -432,9 +430,9 @@
       (1 :body body))))
 
 (defrule for-statement
-    (and |for| |(|
-         (or declaration (? expression)) |;| (? expression) |;| (? expression)
-         |)| statement)
+    (and keyword-|for| punctuator-|(|
+         (or declaration (? expression)) punctuator-|;| (? expression) punctuator-|;| (? expression)
+         punctuator-|)| statement)
   (:destructure (keyword open init semi1 test semi2 step close body
                  &bounds start end)
     (declare (ignore keyword open semi1 semi2 close))
@@ -447,19 +445,19 @@
 (defrule jump-statement
     (and (or goto-statement
              continue-statement
-             (and |break|)
-             (and |return| (? expression)))
-         punctator-|;|)
+             (and keyword-|break|)
+             (and keyword-|return| (? expression)))
+         punctuator-|;|)
   (:function first))
 
 (defrule goto-statement
-    (and |goto| identifier)
+    (and keyword-|goto| identifier)
   (:function second)
   (:lambda (label &bounds start end)
     (bp:node* (:goto-statement :label label :bounds (cons start end)))))
 
 (defrule continue-statement
-    |continue|
+    keyword-|continue|
   (:lambda (keyword &bounds start end)
     (declare (ignore keyword))
     (bp:node* (:continue-statement :bounds (cons start end)))))
@@ -479,7 +477,7 @@
 
 (defrule translation-unit*
     (or (and external-declaration translation-unit*) ; TODO
-        (esrap:& (esrap:? character))))
+        (& (? character))))
 
 (defrule external-declaration
     (or function-definition
