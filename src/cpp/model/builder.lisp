@@ -29,35 +29,28 @@
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :identifier))
-                         &key
-                         name)
+                         &key name)
   (make-instance 'identifier :name name))
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :number))
-                         &key
-                         value)
+                         &key value)
   (make-instance 'number* :value value))
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :string-literal))
-                         &key
-                         value
-                         encoding)
+                         &key value encoding)
   (declare (ignore encoding))
   (make-instance 'string-literal :value value))
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :punctuator))
-                         &key
-                         which)
+                         &key which)
   (make-instance 'punctuator :which which))
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :header-name))
-                         &key
-                         ((:kind kind*))
-                         name)
+                         &key ((:kind kind*)) name)
   (make-instance 'header-name :kind kind* :name name))
 
 ;;; Line
@@ -127,8 +120,7 @@
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :include))
-                         &key
-                         filename)      ; TODO as relation
+                         &key filename) ; TODO as relation
   (make-instance 'include :filename filename))
 
 (defmethod bp:make-node ((builder builder)
@@ -167,19 +159,15 @@
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :undef))
-                         &key
-                         name
-                         replacement)
+                         &key name)
   (make-instance 'undefine :name name))
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :error))
-                         &key
-                         message)
+                         &key message)
   (make-instance 'error* :message message))
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :pragma))
-                         &key
-                         tokens)
+                         &key tokens)
   (make-instance 'pragma :tokens tokens))
