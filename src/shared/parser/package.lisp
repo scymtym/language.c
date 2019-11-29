@@ -31,6 +31,7 @@
   (:export
    #:constant
    #:integer-constant
+   #:floating-constant
    #:string-literal)
 
   ;; Punctuator rules

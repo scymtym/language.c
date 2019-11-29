@@ -23,6 +23,17 @@
            ()
            :type :integer :value 1 :size :long :unsigned? :unsigned :bounds (0 . 3))))
 
+(define-rule-test (floating-constant :floating-constants? t)
+  ("1.0"   '(:constant
+             ()
+             :type :floating :size nil :value 1 :bounds (0 . 3)))
+  ("1.5"   '(:constant
+             ()
+             :type :floating :size nil :value 3/2 :bounds (0 . 3)))
+  ("1.5e2" '(:constant
+             ()
+             :type :floating :size nil :value 150 :bounds (0 . 5))))
+
 (test rule.constant-expression
 
   (let ((language.c.shared.parser::*floating-point-constants?* t))

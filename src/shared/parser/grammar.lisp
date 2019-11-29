@@ -165,18 +165,42 @@
   (:when *floating-point-constants?*))
 
 (defrule decimal-floating-constant
-    (or (and fractional-constant (? exponent-part) (? floating-suffix))
-        (and digit-sequence      exponent-part     (? floating-suffix))))
+    (and (or (and fractional-constant (? exponent-part))
+             (and digit-sequence      exponent-part))
+         (? floating-suffix))
+  (:destructure ((mantissa exponent) suffix &bounds start end)
+    (let ((value (if exponent
+                     (* mantissa (expt 10 exponent))
+                     mantissa)))
+      (bp:node* (:constant :type   :floating
+                           :size   suffix
+                           :value  value
+                           :bounds (cons start end))))))
 
 (defrule fractional-constant
-    (or (and (? digit-sequence) #\. digit-sequence)
-        (and digit-sequence #\.)))
+    (or (and (? parser.common-rules::integer-digits/decimal) parser.common-rules::float-decimals)
+        (and parser.common-rules::integer-digits/decimal     #\.))
+  (:destructure (digits decimals)
+    (+ (parse-integer digits) (if (realp decimals)
+                                  decimals
+                                  0))))
 
 (defrule exponent-part
-    (and (~ #\e) (? sign) digit-sequence))
+    (and (~ #\e) (? sign) parser.common-rules::integer-digits/decimal)
+  (:function rest)
+  (:destructure (sign exponent)
+    (* (or sign 1) (parse-integer exponent))))
 
 (defrule sign
-    (or #\+ #\-))
+    (or sign-+ sign--))
+
+(defrule sign-+
+    #\+
+  (:constant +1))
+
+(defrule sign--
+    #\-
+  (:constant -1))
 
 (defrule digit-sequence
     (+ digit))
@@ -202,7 +226,15 @@
        ))
 
 (defrule floating-suffix
-    (character-ranges #\f #\l #\F #\L))
+    (or floating-suffix/short floating-suffix/long))
+
+(defrule floating-suffix/short
+    (character-ranges #\f #\F)
+  (:constant :short))
+
+(defrule floating-suffix/long
+    (character-ranges #\f #\F)
+  (:constant :long))
 
 (defrule enumeration-constant
     identifier)
@@ -354,7 +386,8 @@
 
 (parser.common-rules.operators:define-operator-rules
     (:skippable?-expression (and)
-     :binary-node-kind      :binary-expression)
+     :binary-node-kind      :binary-expression
+     :ternary-node-kind     :ternary-expression)
   (3 conditional-expression    punctuator-? punctuator-|:|)
   (2 logical-or-expression     punctuator-\|\|)
   (2 logical-and-expression    punctuator-&&)
