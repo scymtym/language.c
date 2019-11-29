@@ -16,6 +16,7 @@
 
 ;;; A.1.1 Lexical elements
 
+;; TODO must not define keyword, make esrap check
 (deftokens (keyword t :whitespace           (* (or #\Space
                                                          #\Tab
                                                          parser.common-rules:c-style-comment/delimited
