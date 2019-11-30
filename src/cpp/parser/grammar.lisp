@@ -17,11 +17,8 @@
 ;;; A.1.1 Lexical elements
 
 ;; TODO must not define keyword, make esrap check
-(deftokens (keyword t :whitespace           (* (or #\Space
-                                                         #\Tab
-                                                         parser.common-rules:c-style-comment/delimited
-                                                         (and #\\ #\Newline)))
-                            :requires-separation? t)
+(deftokens (keyword t :skippable            (or whitespace/same-line* (and #\\ #\Newline)) ; TODO make a rule for this
+                      :requires-separation? t)
   |if| |ifdef| |ifndef|
   |else| |elif|
   |endif|
@@ -196,7 +193,7 @@
                  error-line
                  pragma-line
                  (and))
-         (* whitespace/same-line)
+         whitespace/same-line*
          new-line)
 
   #+no (and |#| (or
@@ -254,7 +251,7 @@
 
 (defrule text-line
     (or (and (+ pp-token) (! #\\) new-line)
-        (and (and)        (* (or #\Space #\Tab comment)) (! #\\) #\Newline)) ; TODO space is temp
+        (and (and)        whitespace/same-line* (! #\\) #\Newline)) ; TODO temp
   (:function first)
   (:lambda (tokens &bounds start end)
     (bp:node* (:line :bounds (cons start end))
@@ -265,9 +262,7 @@
   (:function second))
 
 (defrule pp-token
-    (and (* whitespace/same-line) ;  TODO define our own whitespace rule?
-         preprocessing-token
-         (* whitespace/same-line))
+    (and whitespace/same-line* preprocessing-token whitespace/same-line*)
   (:function second))
 
 (defrule new-line

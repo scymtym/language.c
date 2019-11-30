@@ -22,7 +22,8 @@
   (:import-from #:language.c.shared.parser
    #:deftokens
 
-   #:whitespace #:whitespace/same-line
+   #:whitespace
+   #:whitespace/same-line #:whitespace/same-line+ #:whitespace/same-line*
    #:comment
 
    #:digit
