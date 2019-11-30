@@ -18,7 +18,7 @@
 
 ;;; A.1.2 Keywords
 
-(deftokens (keyword t)
+(deftokens (keyword t :skippable whitespace*)
   |auto|          |extern|        |short|         |while|
   |break|         |float|         |signed|        |_Alignas|
   |case|          |for|           |sizeof|        |_Alignof|
@@ -40,8 +40,8 @@
         expression/parentheses
         generic-selection))
 
-(defrule primary-expression/?ws
-    (and primary-expression (* (or #\Space #\Tab #\Newline)))
+(defrule primary-expression/?s
+    (and primary-expression whitespace*)
   (:function first))
 
 (defrule generic-selection
@@ -61,7 +61,7 @@
              postfix-expression*)))
 
 (defrule postfix-expression/primary
-    (and primary-expression/?ws postfix-expression*)
+    (and primary-expression/?s postfix-expression*)
   (:destructure (primary postfix)
     (reduce #'funcall (reverse postfix) :initial-value primary :from-end t))) ; TODO avoid reverse
 
@@ -129,7 +129,7 @@
       (1 :left  left)
       (1 :right right))))
 
-(deftokens (assignment-operator t)
+(deftokens (assignment-operator t) ; TODO :skippable whitespace*
   |=| |*=| |/=| |%=| |+=| |-=| |<<=| |>>=| |&=| |^=| |\|=|)
 
 (define-separator-list-rule expression
@@ -152,7 +152,7 @@
     (list :declaration specifiers inits)))
 
 (defrule declaration-specifiers
-    (* (or storage-class-specifier
+    (+ (or storage-class-specifier
            type-specifier
            type-qualifier
            function-specifier
@@ -226,15 +226,28 @@
      declarator))
 
 (defrule enum-specifier
-    (and keyword-|enum| (or (and (? identifier) punctuator-{ enumerator-list (? punctuator-|,|) punctuator-})
-                            (and identifier))))
+    (and keyword-|enum| (or (and (? identifier) enum-body)
+                            (and identifier)))
+  (:function second)
+  (:destructure (name &optional enumerators &bounds start end)
+    (bp:node* (:enum :bounds (cons start end))
+      (bp:? :name       name)
+      (*    :enumerator enumerators))))
+
+(defrule enum-body
+    (and punctuator-{ enumerator-list (? punctuator-|,|) punctuator-})
+  (:function second))
 
 (defrule enumerator-list
     (+ enumerator))
 
-(defrule enumeratior ; TODO what?
-    (or enumeration-constant
-        (and enumeration-constant punctuator-|=| constant-expression)))
+(defrule enumerator
+    (and identifier #|TODO enumeration-constant|# (? (and punctuator-|=| constant-expression)))
+  (:destructure (name (&optional equals value) &bounds start end)
+    (declare (ignore equals))
+    (bp:node* (:enumerator :bounds (cons start end))
+      (1    :name  name)
+      (bp:? :value value))))
 
 (defrule atomic-type-specifier
     (and keyword-|_Atomic| punctuator-|(| type-name punctuator-|)|))
@@ -251,18 +264,24 @@
 (defrule declarator
     (and (? pointer) direct-declarator))
 
+(defrule declarator/parentheses
+    (and punctuator-|(| declarator punctuator-|)|)
+  (:function second))
+
 (defrule direct-declarator
-    (and (? (or identifier
-                (and punctuator-|(| declarator punctuator-|)|)))
-         direct-declarator*))
+    (and (or identifier declarator/parentheses) direct-declarator*))
 
 (defrule direct-declarator*
     (* (or (and punctuator-[ (? type-qualifier-list) (? assignment-expression) punctuator-])
            (and punctuator-[ keyword-|static| (? type-qualifier-list) assignment-expression punctuator-])
            (and punctuator-[ type-qualifier-list |static| assignment-expression punctuator-])
-           (and punctuator-[ (? type-qualifier-list) punctuator-*) ; TODO not #\] ?
+           (and punctuator-[ (? type-qualifier-list) punctuator-* punctuator-])
            parameter-type-list
-           (and punctuator-|(| (? identifier-list) punctuator-|)|))))
+           identifier-list/parentheses)))
+
+(defrule identifier-list/parentheses
+    (and punctuator-|(| (? identifier-list) punctuator-|)|)
+  (:function second))
 
 (defrule pointer
     (and punctuator-* (? type-qualifier-list) (? pointer))
@@ -299,7 +318,7 @@
         (and (? pointer) direct-abstract-declarator)))
 
 (defrule direct-abstract-declarator
-    (or (and |(| abstract-declarator |)|)
+    (or (and punctuator-|(| abstract-declarator punctuator-|)|)
         (and (? direct-abstract-declarator)
              (or (and punctuator-[ (? type-qualifier-list) (? assignment-expression) punctuator-])
                  (and punctuator-[ keyword-|static| (? type-qualifier-list) assignment-expression punctuator-])
@@ -380,11 +399,11 @@
         statement))
 
 (defrule block-item/?s
-    (and block-item (* (or #\Space #\Tab #\Newline))) ; HACK
+    (and block-item whitespace*)
   (:function first))
 
 (defrule expression-statement
-    (and (? expression) (* (or #\Space #\Tab #\Newline)) punctuator-|;|) ; HACK whitespace
+    (and (? expression) punctuator-|;|)
   (:function first))
 
 (defrule selection-statement
@@ -466,7 +485,7 @@
 ;;; A.2.4 External definitions
 
 (defrule translation-unit/whitespace
-    (and (* whitespace) translation-unit (* whitespace))
+    (and whitespace* translation-unit whitespace*)
   (:function second))
 
 (defrule translation-unit
@@ -485,12 +504,11 @@
 
 (defrule function-definition
     (and declaration-specifiers declarator (* declaration) compound-statement)
-  (:destructure (specifiers (pointer (name parameters)) declarations body &bounds start end)
-    (bp:node* (:function-definition :name   name
-                                    :bounds (cons start end))
+  (:destructure (specifiers (pointer (name parameters)) declarations body
+                 &bounds start end)
+    (bp:node* (:function-definition :bounds (cons start end))
+      (1 :name        name)
       (* :return      specifiers)
-      (1 :parameter   parameters)
+      (* :parameter   parameters)
       (* :declaration declarations)
       (* :body        body))))
-(bp:with-builder ('list)
-  (esrap:parse 'function-definition "int a(int x) { return 1; }"))

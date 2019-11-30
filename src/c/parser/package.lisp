@@ -23,6 +23,8 @@
    #:define-bracket-rule
    #:define-separator-list-rule
 
+   #:whitespace #:whitespace+ #:whitespace*
+
    #:identifier-list
    #:identifier
 
@@ -36,6 +38,8 @@
    #:punctuator-++  #:punctuator-&
    #:punctuator-*   #:punctuator-+   #:punctuator--   #:punctuator-~   #:punctuator-!
 
+   #:punctuator-=
+
    #:punctuator-|,| #:punctuator-|;| #:punctuator-|:|
 
    #:conditional-expression
@@ -48,6 +52,9 @@
   ;; Rules
   (:export
    ;; Declarations
+   #:declaration
+   #:enum-specifier
+
    #:brace-initializer
    #:initializer-list
 

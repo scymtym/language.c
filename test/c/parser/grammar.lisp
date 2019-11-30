@@ -11,6 +11,38 @@
 
 ;;; A.2.2 Declarations
 
+(define-rule-test declaration
+  ("int x;"
+   '(:declaration)))
+
+(define-rule-test enum-specifier
+  ("enum"    nil)
+  ("enum {}" nil)
+  ("enum foo {}"
+   '(:enum
+     (:name (((:identifier () :name "foo" :bounds (5 . 8)))))
+     :bounds (0 . 8))
+   8 t)
+
+  ("enum foo"
+   '(:enum
+     (:name (((:identifier () :name "foo" :bounds (5 . 8)))))
+     :bounds (0 . 8)))
+  ("enum {~%FOO~%}"
+   '(:enum
+     (:enumerator (((:enumerator
+                     (:name (((:identifier () :name "FOO" :bounds (10 . 13)))))
+                     ))))
+     :bounds (0 . 7)))
+  ("enum foo {~%FOO~%}"
+   '(:enum
+     (:name (((:identifier () :name "foo" :bounds (5 . 8)))))
+     :bounds (0 . 8))))
+(parse "enum {
+FOO
+}" 'list :rule 'enum-specifier)
+
+(parse "enum { FOO }" 'list :rule 'enum-specifier)
 (define-rule-test brace-initializer
   ("{ .foo = 1 }"
    '(:brace-initializer
@@ -89,6 +121,21 @@
 
 ;;;
 
-(esrap:parse 'translation-unit "void main(int argc, char* argv[]) {
-  return 0;
-}")
+;;; A.2.4 External definitions
+
+(define-rule-test translation-unit
+  ("extern void main(int argc, char* argv[]) {~%return 0;~%}"
+   (:translation-unit)))
+
+(define-rule-test function-definition
+  ("int f() {}"
+   '(:function-definition
+     (:return    ((:int))
+      :name      (((:identifier () :name "f" :bounds (4 . 5)))))
+     :bounds (0 . 10)))
+  ("int
+a
+(
+/*foo */
+int x) { return 1; }"
+   '(:function-definition)))
