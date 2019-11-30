@@ -78,31 +78,12 @@
         parser.common-rules:c-style-comment/rest-of-line/trimmed)
   (:error-report nil))
 
-;;; A.1.2 Keywords
-
-;; TODO
-#+unused? (deftokens (keyword t :requires-separation? t)
-            |if| |else|) ; used by cpp and c
-
-#+unused (deftokens (keyword t)
-  |auto|          |extern|        |short|         |while|
-  |break|         |float|         |signed|        |_Alignas|
-  |case|          |for|           |sizeof|        |_Alignof|
-  |char|          |goto|          |static|        |_Atomic|
-  |const|         |if|            |struct|        |_Bool|
-  |continue|      |inline|        |switch|        |_Complex|
-  |default|       |int|           |typedef|       |_Generic|
-  |double|        |long|          |union|         |_Imaginary|
-  |do|            |register|      |unsigned|      |_Noreturn|
-  |else|          |restrict|      |void|          |_Static_assert|
-  |enum|          |return|        |volatile|      |_Thread_local|)
-
 ;;; A.1.3 Identifiers
 
 ;;; Defined in A.2.2 but shared between preprocessor and proper C.
 (define-separator-list-rule identifier-list identifier punctuator-|,|)
 
-(defrule identifier                     ; TODO exclude keywords?
+(defrule identifier
     (and identifier-nondigit (* (or identifier-nondigit digit)))
   (:text t)
   (:lambda (name &bounds start end)
