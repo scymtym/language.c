@@ -12,13 +12,15 @@
 
    #:language.c.cpp.parser)
 
-  (:import-from #:language.c.shared.parser.test
-   #:define-rule-test)
-
   (:export
    #:run-tests))
 
 (cl:in-package #:language.c.cpp.parser.test)
+
+(defmacro define-rule-test (name &body body)
+  `(language.c.shared.parser.test:define-rule-test
+       (,name :skippable :same-line :floating-constants? nil)
+     ,@body))
 
 (def-suite :language.c.cpp.parser)
 

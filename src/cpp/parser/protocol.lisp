@@ -8,9 +8,15 @@
 
 (defgeneric parse (input builder &key rule))
 
+(declaim (inline %parse))
+(defun %parse (rule input)
+  (let ((language.c.shared.parser::*skippable-mode*            :whitespace/same-line)
+        (language.c.shared.parser::*floating-point-constants?* nil))
+    (esrap:parse rule input)))
+
 (defmethod parse ((input string) (builder t) &key (rule 'preprocessing-file))
   (bp:with-builder (builder)
-    (esrap:parse rule input)))
+    (%parse rule input)))
 
 (defmethod parse ((input stream) (builder t) &rest args &key rule)
   (declare (ignore rule))
