@@ -106,9 +106,6 @@
         (and keyword-|sizeof| type-name/parenthses)
         (and keyword-|_Alignof| type-name/parenthses)))
 
-#+no (deftokens (unary-operators t) ; TODO these are still CL symbols. can't do this
-    |&| |*| |+| |-| |~| |!|)
-
 (defrule unary-operators
     (or punctuator-& punctuator-* punctuator-+ punctuator-- punctuator-~ punctuator-!))
 
@@ -129,7 +126,7 @@
       (1 :left  left)
       (1 :right right))))
 
-(deftokens (assignment-operator t) ; TODO :skippable whitespace*
+(deftokens (assignment-operator t :skippable whitespace*)
   |=| |*=| |/=| |%=| |+=| |-=| |<<=| |>>=| |&=| |^=| |\|=|)
 
 (define-separator-list-rule expression
@@ -435,7 +432,7 @@
 (defrule while-statement
     (and keyword-|while| expression/parentheses statement)
   (:function rest)
-  (:destructure (keyword test body &bounds start end)
+  (:destructure (test body &bounds start end)
     (bp:node* (:while-statement :bounds (cons start end))
       (1 :test test)
       (1 :body body))))
