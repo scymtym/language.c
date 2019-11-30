@@ -23,6 +23,14 @@
    #:define-bracket-rule
    #:define-separator-list-rule)
 
+  ;; Lexical rules
+  (:export
+   #:whitespace           #:whitespace+           #:whitespace*
+
+   #:whitespace/same-line #:whitespace/same-line+ #:whitespace/same-line*
+
+   #:skippable            #:skippable+            #:skippable*)
+
   (:export
    #:identifier-list
    #:identifier)

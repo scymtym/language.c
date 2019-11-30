@@ -13,7 +13,7 @@
 
 (defrule whitespace/same-line
     (or (character-ranges #\Space #\Tab)
-        (and #\\ #\Newline) ; "5.1.1.2 Translation phases" Phase 2
+        (and #\\ #\Newline)     ; "5.1.1.2 Translation phases" Phase 2
         parser.common-rules:c-style-comment/delimited/trimmed)
   (:error-report nil)
   (:use-cache nil))
@@ -37,6 +37,42 @@
   (:error-report nil)
   (:use-cache nil))
 
+(defrule whitespace+
+    (+ whitespace)
+  (:error-report nil)
+  (:use-cache nil))
+
+(defrule whitespace*
+    (* whitespace)
+  (:error-report nil)
+  (:use-cache nil))
+
+(macrolet
+    ((define-skippable-rules (name expression-whitespace expression-same-line)
+       (let* ((rule-name            name)
+              (rule-name-whitespace (symbolicate rule-name '#:-whitespace))
+              (rule-name-same-line  (symbolicate rule-name-whitespace
+                                                 '#:/same-line)))
+         `(progn
+            (defrule ,rule-name-whitespace
+                ,expression-whitespace
+              (:error-report nil)
+              (:use-cache nil)
+              (:when (eq *skippable-mode* :whitespace)))
+
+            (defrule ,rule-name-same-line
+                ,expression-same-line
+              (:error-report nil)
+              (:use-cache nil)
+              (:when (eq *skippable-mode* :whitespace/same-line)))
+
+            (defrule ,rule-name
+                (or ,rule-name-whitespace ,rule-name-same-line)
+              (:use-cache nil))))))
+  (define-skippable-rules skippable  whitespace     whitespace/same-line)
+  (define-skippable-rules skippable+ (+ whitespace) (+ whitespace/same-line))
+  (define-skippable-rules skippable* (* whitespace) (* whitespace/same-line)))
+
 (defrule comment
     (or parser.common-rules:c-style-comment/delimited/trimmed
         parser.common-rules:c-style-comment/rest-of-line/trimmed)
@@ -44,8 +80,9 @@
 
 ;;; A.1.2 Keywords
 
+;; TODO
 #+unused? (deftokens (keyword t :requires-separation? t)
-  |if| |else|) ; used by cpp and c
+            |if| |else|) ; used by cpp and c
 
 #+unused (deftokens (keyword t)
   |auto|          |extern|        |short|         |while|
@@ -96,7 +133,7 @@
 (defrule constant
     (or floating-constant
         integer-constant
-        enumeration-constant
+        enumeration-constant ; TODO move to C grammar?
         character-constant))
 
 (defrule integer-constant
@@ -157,8 +194,6 @@
     (or "ll" "LL")
   (:constant :long-long))
 
-(defvar *floating-point-constants?* nil)
-
 (defrule floating-constant
     (or decimal-floating-constant
         hexadecimal-floating-constant)
@@ -206,7 +241,7 @@
     (+ digit))
 
 (defrule hexadecimal-floating-constant
-    (and "0x" ; hexadecimal-prefix
+    (and "0x" ; TODO hexadecimal-prefix
          (or hexadecimal-fractional-constant
              hexadecimal-digit-sequence)
          binary-exponent-part
@@ -293,7 +328,7 @@
 
 ;;; A.1.7 Punctuators
 
-(deftokens (punctuator t :whitespace whitespace/same-line*) ; TODO should this return a node? TODO CPP wants whitespace without newlines; C wants newlines
+(deftokens (punctuator t :skippable skippable*)
   ;; Two things are noteworthy here:
   ;; 1. Some of the tokens (such as "(", ";", ",") need escaping
   ;; 2. Order matters. An earlier entry must not be a prefix of a

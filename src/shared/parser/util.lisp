@@ -16,7 +16,7 @@
     `(and ,string (! ,(subseq confusable (length string))))
     string))
 
-(defmacro deftokens ((name resultp &key (whitespace          '(* whitespace))
+(defmacro deftokens ((name resultp &key (skippable          'skippable*)
                                         requires-separation?)
                      &body symbols)
   (let ((strings    (map 'list #'string symbols))
@@ -30,11 +30,11 @@
                          (string    (disambiguate token-string strings)))
                      (push rule-name rule-names)
                      `(defrule ,rule-name
-                          (and ,whitespace
+                          (and ,skippable
                                ,string
                                ,@(when requires-separation?
                                    '((esrap:! (or identifier-nondigit digit))))
-                               ,whitespace)
+                               ,skippable)
                         (:constant ,result))))
                  strings symbols)
        (defrule ,name (or ,@(reverse rule-names))))))
