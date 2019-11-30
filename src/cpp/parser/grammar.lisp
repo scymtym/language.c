@@ -171,9 +171,10 @@
   (:function fourth))
 
 (defrule endif
-    (and punctuator-|#| keyword-|endif| (? parser.common-rules:c-style-comment/rest-of-line) new-line)
+    (and punctuator-|#| keyword-|endif| new-line)
   (:function second))
-
+(esrap:parse 'endif "#endif // foo
+")
 ;;; Control lines
 
 (defmacro define-control-line-rule
@@ -187,12 +188,12 @@
 (defrule control-line
     (and (and) #+no (! keyword-|endif|)
          punctuator-|#| (or include-line
-                 define-identifier-line
-                 undef-line
-                 line-line
-                 error-line
-                 pragma-line
-                 (and))
+                            define-identifier-line
+                            undef-line
+                            line-line
+                            error-line
+                            pragma-line
+                            (and))
          whitespace/same-line*
          new-line)
 
@@ -266,7 +267,9 @@
   (:function second))
 
 (defrule new-line
-    (or #\newline <end-of-input>))
+    (and (? parser.common-rules:c-style-comment/rest-of-line)
+         (or #\Newline <end-of-input>))
+  (:constant nil))
 
 (defrule on-off-switch
     (or keyword-|on| keyword-|off| keyword-|default|))
