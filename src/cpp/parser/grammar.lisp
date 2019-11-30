@@ -173,8 +173,7 @@
 (defrule endif
     (and punctuator-|#| keyword-|endif| new-line)
   (:function second))
-(esrap:parse 'endif "#endif // foo
-")
+
 ;;; Control lines
 
 (defmacro define-control-line-rule

@@ -49,7 +49,12 @@ typedef __gnuc_va_list va_list;
 # define __END_DECLS bar
 #endif
 "
-          'list :rule 'if-section)))
+          'list :rule 'if-section))
+
+  (finishes
+    (parse "#if foo
+#endif // foo
+" 'list :rule 'if-section)))
 
 (define-rule-test constant-expression
   ("0 && 0"
