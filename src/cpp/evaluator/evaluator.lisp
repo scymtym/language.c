@@ -1,4 +1,4 @@
-;;;; evaluator.lisp --- TODO.
+;;;; evaluator.lisp --- Evaluation rules for nodes.
 ;;;;
 ;;;; Copyright (C) 2019 Jan Moringen
 ;;;;

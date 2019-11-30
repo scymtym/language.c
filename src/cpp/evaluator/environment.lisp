@@ -78,18 +78,7 @@
               :while (evaluate first argument-environment target)
               :finally (progn
                          (evaluate replacement call-environment target)
-                         (return rest))))))
-
-  #+no (let ((parameters  (map 'list #'model:name (parameters macro)))
-             (replacement (replacement macro)))
-         (lambda (arguments target)
-           (let ((environment (make-instance 'child-environment ; TODO
-                                             :parent environment)))
-             (map nil (lambda (name value)
-                        (setf (lookup name environment)
-                              (make-instance 'object-like-macro :replacement value)))
-                  parameters arguments)
-             (evaluate replacement environment target)))))
+                         (return rest)))))))
 
 ;;; `search-path-environment'
 
