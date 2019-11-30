@@ -19,6 +19,7 @@
                  :pathname   "src/shared/parser"
                  :serial     t
                  :components ((:file       "package")
+                              (:file       "variables")
                               (:file       "util")
                               (:file       "grammar"))))
 
