@@ -119,13 +119,11 @@ FOO
                                :label  (:identifier () :name "foo" :bounds (5 . 8))
                                :bounds (0 . 8))))
 
-;;;
-
 ;;; A.2.4 External definitions
 
 (define-rule-test translation-unit
   ("extern void main(int argc, char* argv[]) {~%return 0;~%}"
-   (:translation-unit)))
+   '(:translation-unit)))
 
 (define-rule-test function-definition
   ("int f() {}"

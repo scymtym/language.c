@@ -351,7 +351,7 @@
       (1 :expression  initializer))))
 
 (defrule designation
-    (and (+ designator) |=|)
+    (and (+ designator) punctuator-=)
   (:function first))
 
 (defrule designator
@@ -365,7 +365,7 @@
       (1 :index index))))
 
 (defrule member-designator
-    (and |.| identifier)
+    (and punctuator-|.| identifier)
   (:function second)
   (:lambda (member &bounds start end)
     (bp:node* (:member-designator :bounds (cons start end))
