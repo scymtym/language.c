@@ -53,3 +53,10 @@
 
 (test object-like-macro.smoke
   "Smoke test for the evaluation of `function-like-macro' nodes.")
+
+;;;
+
+(test unsorted.smoke                    ; TODO obviously
+  "Unsorted tests"
+  (eval-cases
+   '("\"foo\"" "\"foo\"~%")))

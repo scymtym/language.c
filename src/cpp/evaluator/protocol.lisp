@@ -42,10 +42,10 @@
 (defmethod evaluate ((element sequence) (environment t) (target stream))
   (let ((first? t))
     (labels ((rec (remainder)
-               (if first?
-                   (setf first? nil)
-                   (write-char #\Space target))
                (when (consp remainder)
+                 (if first?
+                     (setf first? nil)
+                     (write-char #\Space target))
                  (destructuring-bind (first . rest) remainder
                    (let ((result (evaluate first environment target)))
                      (typecase result
@@ -59,7 +59,8 @@
                         (rec (append (coerce result 'list) rest)))
                        (t
                         (rec rest))))))))
-      (rec (coerce element 'list)))))
+      (rec (coerce element 'list))))
+  :done)
 
 (defmethod resolve-include ((environment t) (kind t) (name t))
   nil)

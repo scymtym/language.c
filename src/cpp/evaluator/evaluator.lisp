@@ -22,6 +22,18 @@
                      (target      stream))
   (expand (model:name element) environment))
 
+(defmethod evaluate ((element     model:header-name)
+                     (environment t)
+                     (target      stream))
+  (multiple-value-bind (open close)
+      (ecase (model:kind element)
+        (:system (values #\< #\>))
+        (:local  (values #\" #\")))
+    (write-char open target)
+    (write-string (model::token-string element) target)
+    (write-char close target))
+  :done)
+
 ;;;
 
 (defmethod evaluate ((element     model:line)
@@ -38,30 +50,6 @@
                      (target      t))
   (evaluate (model:parts element) environment target)
   :done)
-
-;;;
-
-(defmethod evaluate ((element     sequence) ; TODO put this and the environment into constant-expression.lisp?
-                     (environment undefined-is-0-environment)
-                     (target      stream))
-  (call-next-method)
-  #+no (let ((first?   t)
-        (defined? nil))
-    (map nil (named-lambda node (node)
-               (when (and (typep node 'model:identifier)
-                          (string= (model:name node) "defined"))
-                 (setf defined? t)
-                 (return-from node))
-               (if first?
-                   (setf first? nil)
-                   (write-char #\Space target))
-               (cond (defined?
-                      (let ((macro (lookup (model:name node) environment)))
-                        (write-string (if macro "1" "0") target))
-                      (setf defined? nil))
-                     (t
-                      (evaluate node environment target))))
-         element)))
 
 ;;; 6.10.1 Conditional inclusion
 (defmethod evaluate ((element     model:if*)
