@@ -27,7 +27,9 @@
 
   |define| |undef|
 
-  |line| |error| |pragma|)
+  |line| |error| |pragma|
+
+  |on| |off| |default|)
 
 (defrule punctuator-token ; TODO can be avoided if shared grammar makes a node
     (and (! (and punctuator-|#| keyword)) punctuator) ; TODO punctuactors eat newlines
@@ -270,5 +272,5 @@
          (or #\Newline <end-of-input>))
   (:constant nil))
 
-(defrule on-off-switch
+(defrule on-off-switch ; TODO unused?
     (or keyword-|on| keyword-|off| keyword-|default|))
