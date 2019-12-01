@@ -22,6 +22,18 @@
                      (target      stream))
   (expand (model:name element) environment))
 
+(defmethod evaluate ((element     model::number*)
+                     (environment t)
+                     (target      stream))
+  (write-string (model::token-string element) target)
+  :number)
+
+(defmethod evaluate ((element     model::punctuator)
+                     (environment t)
+                     (target      stream))
+  (write-string (model::token-string element) target)
+  :punctuator)
+
 (defmethod evaluate ((element     model:header-name)
                      (environment t)
                      (target      stream))

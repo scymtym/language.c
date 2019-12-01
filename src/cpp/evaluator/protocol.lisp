@@ -47,6 +47,8 @@
                  (cond (first?
                         )
                        ((member previous '(:punctuator :nothing)))
+                       ((member previous '(:identifier :number))
+                        (write-char #\Space target))
                        (t
                         (princ previous target)
                         (write-char #\Space target)))
@@ -55,7 +57,7 @@
                      (typecase result
                        (string ; TODO currently needed for identifiers that evaluate to strings
                         (setf first? nil)
-                        (setf previous :punctuator) ; HACK
+                        (setf previous :identifier) ; HACK
                         (write-string result target)
                         (rec rest))
                                         ; (function expansion)
