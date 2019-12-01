@@ -9,6 +9,9 @@
    #:cl
    #:alexandria)
 
+  (:shadow
+   #:keyword)
+
   (:local-nicknames
    (#:bp #:architecture.builder-protocol))
 
