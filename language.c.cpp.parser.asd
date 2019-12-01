@@ -11,11 +11,13 @@
                 "Daniel Kochmański")
 
   :version     (:read-file-form "version-string.sexp")
-  :depends-on  ("esrap"
-                "parser.common-rules"
+  :depends-on  ("alexandria"
+
+                (:version "esrap"                    "0.17")
+                (:version "parser.common-rules"      "0.3")
                 "architecture.builder-protocol"
 
-                "language.c.shared.parser")
+                (:version "language.c.shared.parser" (:read-file-form "version-string.sexp")))
 
   :components  ((:module     "parser"
                  :pathname   "src/cpp/parser"

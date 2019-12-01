@@ -219,11 +219,11 @@
   ((name (&optional open parameters close) replacement)
    (declare (ignore open close))
    (if parameters
-       (bp:node* (:function-like-macro :bounds (cons start end))
+       (bp:node* (:define-function-like-macro :bounds (cons start end))
          (1 :name        name)
          (* :parameter   parameters)
          (* :replacement replacement))
-       (bp:node* (:object-like-macro :bounds (cons start end))
+       (bp:node* (:define-object-like-macro :bounds (cons start end))
          (1 :name        name)
          (* :replacement replacement)))))
 
