@@ -235,8 +235,8 @@
     (and punctuator-{ enumerator-list (? punctuator-|,|) punctuator-})
   (:function second))
 
-(defrule enumerator-list
-    (+ enumerator))
+(define-separator-list-rule enumerator-list
+    enumerator punctuator-|,|)
 
 (defrule enumerator
     (and identifier #|TODO enumeration-constant|# (? (and punctuator-|=| constant-expression)))

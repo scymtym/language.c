@@ -28,24 +28,30 @@
    '(:enum
      (:name (((:identifier () :name "foo" :bounds (5 . 8)))))
      :bounds (0 . 8)))
-  ("enum {~%FOO~%}"
+  ("enum {FOO}"
    '(:enum
      (:enumerator (((:enumerator
-                     (:name (((:identifier () :name "FOO" :bounds (7 . 10)))))
-                     :bounds (7 . 10)))))
-     :bounds (0 . 12)))
+                     (:name (((:identifier () :name "FOO" :bounds (6 . 9)))))
+                     :bounds (6 . 9)))))
+     :bounds (0 . 10)))
   ("enum foo {~%FOO~%}"
    '(:enum
      (:enumerator (((:enumerator
                      (:name (((:identifier () :name "FOO" :bounds (11 . 14)))))
                      :bounds (11 . 14))))
       :name       (((:identifier () :name "foo" :bounds (5 . 8)))))
-     :bounds (0 . 16))))
-(parse "enum {
-FOO
-}" 'list :rule 'enum-specifier)
+     :bounds (0 . 16)))
+  ("enum foo {~%FOO,BAR~%}"
+   '(:enum
+     (:enumerator (((:enumerator
+                     (:name (((:identifier () :name "FOO" :bounds (11 . 14)))))
+                     :bounds (11 . 14)))
+                   ((:enumerator
+                     (:name (((:identifier () :name "BAR" :bounds (15 . 18)))))
+                     :bounds (15 . 18))))
+      :name       (((:identifier () :name "foo" :bounds (5 . 8)))))
+     :bounds (0 . 20))))
 
-(parse "enum { FOO }" 'list :rule 'enum-specifier)
 (define-rule-test brace-initializer
   ("{ .foo = 1 }"
    '(:brace-initializer
