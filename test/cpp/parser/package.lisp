@@ -1,4 +1,4 @@
-;;;; grammar.lisp --- Tests for the grammar rules of the cpp.parser module
+;;;; package.lisp --- Package definition for test of the cpp.parser module
 ;;;;
 ;;;; Copyright (C) 2019 Jan Moringen
 ;;;;
