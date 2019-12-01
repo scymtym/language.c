@@ -124,18 +124,18 @@
   (make-instance 'include :filename filename))
 
 (defmethod bp:make-node ((builder builder)
-                         (kind    (eql :object-like-macro))
+                         (kind    (eql :define-object-like-macro))
                          &key)
-  (make-instance 'object-like-macro))
+  (make-instance 'define-object-like-macro))
 
 (defmethod bp:make-node ((builder builder)
-                         (kind    (eql :function-like-macro))
+                         (kind    (eql :define-function-like-macro))
                          &key)
-  (make-instance 'function-like-macro))
+  (make-instance 'define-function-like-macro))
 
 (defmethod bp:relate ((builder  builder)
                       (relation (eql :name))
-                      (left     macro)
+                      (left     define)
                       (right    t)
                       &key)
   (setf (%name left) right)
@@ -143,7 +143,7 @@
 
 (defmethod bp:relate ((builder  builder)
                       (relation (eql :replacement))
-                      (left     macro)
+                      (left     define)
                       (right    t)
                       &key)
   (vector-push-extend right (replacement left))
@@ -151,7 +151,7 @@
 
 (defmethod bp:relate ((builder  builder)
                       (relation (eql :parameter))
-                      (left     function-like-macro)
+                      (left     define-function-like-macro)
                       (right    t)
                       &key)
   (vector-push-extend right (parameters left))

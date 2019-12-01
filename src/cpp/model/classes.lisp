@@ -108,7 +108,7 @@
   ((%filename :initarg :filename
               :reader  filename)))
 
-(defclass macro () ; TODO maybe call this define again
+(defclass define ()
   ((%name        :initarg  :name ; TODO is the name expanded first? otherwise make a name-mixin
                  :reader   name
                  :writer   (setf %name))
@@ -116,10 +116,10 @@
                  :reader   replacement
                  :initform (make-array 0 :adjustable t :fill-pointer 0))))
 
-(defclass object-like-macro (macro)
+(defclass define-object-like-macro (define)
   ())
 
-(defclass function-like-macro (macro)
+(defclass define-function-like-macro (define)
   ((%parameters :reader   parameters
                 :initform (make-array 0 :adjustable t :fill-pointer 0))))
 

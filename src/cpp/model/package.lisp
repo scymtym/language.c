@@ -11,34 +11,29 @@
   (:local-nicknames
    (#:bp #:architecture.builder-protocol))
 
+  ;; Lexical elements
   (:export
-   #:identifier
-   #:name
+   #:identifier #:name
 
-   #:number*
-   #:value
+   #:number* #:value
 
-   #:group
-   #:parts
+   #:header-name #:kind #:name)
 
-   #:line
-   #:tokens
+  ;;
+  (:export
+   #:group #:parts
 
-   #:if*
-   #:test
-   #:then
-   #:else
-   #:macro
-   #:object-like-macro
-   #:function-like-macro)
+   #:line #:tokens
+
+   #:if* #:kind #:test #:then #:else)
 
   ;; Control line nodes
   (:export
    #:include #:filename
 
-   #:macro #:name  #:replacement
-   #:object-like-macro
-   #:function-like-macro #:parameters
+   #:define #:name  #:replacement
+   #:define-object-like-macro
+   #:define-function-like-macro #:parameters
 
    #:undefine #:name
 
@@ -46,9 +41,7 @@
 
    #:error* #:message
 
-   #:pragma
-
-   #:kind)
+   #:pragma #:tokens)
 
   ;; Builder
   (:export
