@@ -9,7 +9,7 @@
 (defmacro define-rule-test (rule-and-options &body cases)
   (destructuring-bind (rule &key skippable floating-constants?)
       (alexandria:ensure-list rule-and-options)
-    (let ((test-name (alexandria:symbolicate '#:rule. rule))) ; TODO alexandria dependency
+    (let ((test-name (alexandria:symbolicate '#:rule. rule)))
       `(test ,test-name
          ,(format nil "Smoke test for the `~(~A~)' rule." rule)
          (let (,@(when skippable

@@ -11,9 +11,11 @@
                 "Daniel Kochmański")
 
   :version     (:read-file-form "version-string.sexp")
-  :depends-on  ("esrap"
-                "parser.common-rules"
-                "parser.common-rules.operators")
+  :depends-on  ("alexandria"
+
+                (:version "esrap"                         "0.17")
+                (:version "parser.common-rules"           "0.3")
+                (:version "parser.common-rules.operators" "0.3"))
 
   :components  ((:module     "parser"
                  :pathname   "src/shared/parser"
@@ -30,7 +32,9 @@
   :license     "GPLv3" ; see COPYING for details
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
 
-  :depends-on ((:version "fiveam" "1.4")
+  :depends-on ("alexandria"
+
+               (:version "fiveam" "1.4")
                "parser.common-rules/test"
 
                "language.c.shared.parser")
