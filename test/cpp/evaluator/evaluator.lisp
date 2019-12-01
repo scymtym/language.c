@@ -48,11 +48,18 @@
 (test include.smoke
   "Smoke test for the evaluation of `include' nodes.")
 
-(test object-like-macro.smoke
-  "Smoke test for the evaluation of `object-like-macro' nodes.")
+(test define-object-like-macro.smoke
+  "Smoke test for the evaluation of `define-object-like-macro' nodes."
 
-(test object-like-macro.smoke
-  "Smoke test for the evaluation of `function-like-macro' nodes.")
+  (eval-cases
+   '("#define foo 1~%foo" "1~%")))
+
+(test define-function-like-macro.smoke
+  "Smoke test for the evaluation of `define-function-like-macro' nodes."
+
+  (eval-cases
+   '("#define foo(x) x~%foo(1)" "1~%"))
+  )
 
 ;;;
 

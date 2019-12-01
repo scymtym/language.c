@@ -32,7 +32,7 @@
     (write-char open target)
     (write-string (model::token-string element) target)
     (write-char close target))
-  :done)
+  :punctuator)
 
 ;;;
 
@@ -41,7 +41,7 @@
                      (target      stream))
   (evaluate (model:tokens element) environment target)
   (terpri target)
-  :done)
+  :newline)
 
 ;;; Group
 
@@ -71,8 +71,7 @@
            (successor   (if result
                             (model:then element)
                             (model:else element))))
-      (evaluate successor environment target)))
-  :done)
+      (evaluate successor environment target))))
 
 ;;; Control lines
 
@@ -131,7 +130,7 @@
           (if (emptyp replacement)
               (make-instance 'empty-macro)
               (make-instance 'object-like-macro :replacement replacement))))
-  :done)
+  :nothing)
 
 (defmethod evaluate ((element     model:define-function-like-macro)
                      (environment environment)
@@ -142,14 +141,14 @@
     (setf (lookup name environment)
           (make-instance 'function-like-macro :parameters  parameters
                                               :replacement replacement)))
-  :done)
+  :nothing)
 
 (defmethod evaluate ((element     model:undefine)
                      (environment environment)
                      (target      t))
   (let ((name (model:name (model:name element))))
     (remhash name (entries environment)))
-  :done)
+  :nothing)
 
 (defmethod evaluate ((element     model:error*)
                      (environment environment)
@@ -164,12 +163,11 @@
     (if-let ((which (find-symbol token-string '#:keyword)))
       (evaluate-pragma which element environment target)
       (cerror "Ignore the directive" "Unknown directive ~A" token-string)))
-  :done)
+  :nothing)
 
 (defmethod evaluate-pragma ((which       (eql :|once|))
                             (element     model:pragma)
                             (environment include-environment)
                             (target      t))
   (let ((current-file (first (include-stack environment))))
-    (setf (gethash current-file (included-files environment)) t))
-  :done)
+    (setf (gethash current-file (included-files environment)) t)))

@@ -179,7 +179,7 @@
                  (with-output-to-string (stream)
                    (let ((result (evaluate element (parent environment) stream)))
                      (when (stringp result)
-                       (return result )))))))
+                       (return result)))))))
     (setf (lookup name (call-environment environment))
           (make-instance 'object-like-macro :replacement value))))
 
