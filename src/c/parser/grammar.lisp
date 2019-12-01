@@ -87,7 +87,7 @@
     (and punctuator-|(| (* argument-expression-list) punctuator-|)|))
 
 (defrule argument-expression-list
-    (and assignment-expression (* (and |,| argument-expression))))
+    (and assignment-expression (* (and punctuator-|,| argument-expression))))
 
 (defrule postfix-increment
     punctuator-++
@@ -377,10 +377,10 @@
 (defrule statement
     (or labeled-statement
         compound-statement
-        expression-statement
         selection-statement
         iteration-statement
-        jump-statement))
+        jump-statement
+        expression-statement))
 
 (defrule labeled-statement
     (and (or (and keyword-|case| constant-expression)
@@ -447,7 +447,9 @@
 
 (defrule for-statement
     (and keyword-|for| punctuator-|(|
-         (or declaration (? expression)) punctuator-|;| (? expression) punctuator-|;| (? expression)
+         (or declaration (? expression)) punctuator-|;|
+         (? expression) punctuator-|;|
+         (? expression)
          punctuator-|)| statement)
   (:destructure (keyword open init semi1 test semi2 step close body
                  &bounds start end)
@@ -461,8 +463,8 @@
 (defrule jump-statement
     (and (or goto-statement
              continue-statement
-             (and keyword-|break|)
-             (and keyword-|return| (? expression)))
+             break-statement
+             return-statement)
          punctuator-|;|)
   (:function first))
 
@@ -470,13 +472,27 @@
     (and keyword-|goto| identifier)
   (:function second)
   (:lambda (label &bounds start end)
-    (bp:node* (:goto-statement :label label :bounds (cons start end)))))
+    (bp:node* (:goto-statement :bounds (cons start end))
+      (1 :label label))))
 
 (defrule continue-statement
     keyword-|continue|
   (:lambda (keyword &bounds start end)
     (declare (ignore keyword))
     (bp:node* (:continue-statement :bounds (cons start end)))))
+
+(defrule break-statement
+    keyword-|break|
+  (:lambda (keyword &bounds start end)
+    (declare (ignore keyword))
+    (bp:node* (:break-statement :bounds (cons start end)))))
+
+(defrule return-statement
+    (and keyword-|return| (? expression))
+  (:function second)
+  (:lambda (value &bounds start end)
+    (bp:node* (:return-statement :bounds (cons start end))
+      (bp:? :value value))))
 
 
 ;;; A.2.4 External definitions
