@@ -10,4 +10,5 @@
 
   (:export
    #:preprocess
-   #:parse))
+   #:parse
+   #:repl))
