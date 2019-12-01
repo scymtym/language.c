@@ -31,13 +31,16 @@
   ("enum {~%FOO~%}"
    '(:enum
      (:enumerator (((:enumerator
-                     (:name (((:identifier () :name "FOO" :bounds (10 . 13)))))
-                     ))))
-     :bounds (0 . 7)))
+                     (:name (((:identifier () :name "FOO" :bounds (7 . 10)))))
+                     :bounds (7 . 10)))))
+     :bounds (0 . 12)))
   ("enum foo {~%FOO~%}"
    '(:enum
-     (:name (((:identifier () :name "foo" :bounds (5 . 8)))))
-     :bounds (0 . 8))))
+     (:enumerator (((:enumerator
+                     (:name (((:identifier () :name "FOO" :bounds (11 . 14)))))
+                     :bounds (11 . 14))))
+      :name       (((:identifier () :name "foo" :bounds (5 . 8)))))
+     :bounds (0 . 16))))
 (parse "enum {
 FOO
 }" 'list :rule 'enum-specifier)
