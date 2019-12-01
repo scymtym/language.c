@@ -39,7 +39,8 @@
   :components ((:module      "evaluator"
                 :pathname    "test/cpp/evaluator"
                 :serial      t
-                :components  ((:file       "package"))))
+                :components  ((:file       "package")
+                              (:file       "evaluator"))))
 
   :perform    (test-op (operation component)
                 (uiop:symbol-call '#:language.c.cpp.evaluator.test '#:run-tests)))

@@ -7,7 +7,6 @@
 (cl:defpackage #:language.c.cpp.evaluator.test
   (:use
    #:cl
-   #:let-plus
 
    #:fiveam
 

@@ -21,21 +21,35 @@
   (list string test-ast (eval-constant-expression test-ast)))
 
 (defun eval-cases (&rest cases)
-  (map nil (lambda+ ((input expected))
-             (let* ((input       (format nil input))
-                    (expected    (format nil expected))
-                    (builder     (make-instance 'model:builder))
-                    (ast         (parser:parse input builder))
-                    (environment (make-instance 'environment))
-                    (result      (with-output-to-string (stream)
-                                   (evaluate ast environment stream))))
-               (is (string= expected result))))
+  (map nil (lambda (case)
+             (destructuring-bind (input expected) case
+               (let* ((input       (format nil input))
+                      (expected    (format nil expected))
+                      (builder     (make-instance 'model:builder))
+                      (ast         (parser:parse input builder))
+                      (environment (make-instance 'environment))
+                      (result      (with-output-to-string (stream)
+                                     (evaluate ast environment stream))))
+                 (is (string= expected result)))))
        cases))
 
+(test group.smoke
+  "Smoke test for the evaluation of `group' nodes.")
+
 (test if.smoke
+  "Smoke test for the evaluation of `if' nodes."
 
   (eval-cases
    '("x"                          "x~%")
    '("#if 1~%x~%#endif"           "x~%")
    '("#if 0~%x~%#else~%y~%#endif" "y~%")
    '("#if 1~%x~%#else~%y~%#endif" "x~%")))
+
+(test include.smoke
+  "Smoke test for the evaluation of `include' nodes.")
+
+(test object-like-macro.smoke
+  "Smoke test for the evaluation of `object-like-macro' nodes.")
+
+(test object-like-macro.smoke
+  "Smoke test for the evaluation of `function-like-macro' nodes.")

@@ -134,7 +134,7 @@
        (return-from evaluate :done))))
 
 ;;; 6.10.3 Macro replacement
-(defmethod evaluate ((element     model:object-like-macro)
+(defmethod evaluate ((element     model:define-object-like-macro)
                      (environment environment)
                      (target      t))
   (let ((name        (model:name (model:name element)))
@@ -145,7 +145,7 @@
               (make-instance 'object-like-macro :replacement replacement))))
   :done)
 
-(defmethod evaluate ((element     model:function-like-macro)
+(defmethod evaluate ((element     model:define-function-like-macro)
                      (environment environment)
                      (target      t))
   (let ((name        (model:name (model:name element)))
