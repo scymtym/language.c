@@ -121,7 +121,9 @@
 
 (defclass define-function-like-macro (define)
   ((%parameters :reader   parameters
-                :initform (make-array 0 :adjustable t :fill-pointer 0))))
+                :initform (make-array 0 :adjustable t :fill-pointer 0))
+   (%ellipsis?  :initarg  :ellipsis?
+                :reader   ellipsis?)))
 
 (defclass undefine ()
   ((%name :initarg :name

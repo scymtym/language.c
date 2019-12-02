@@ -130,8 +130,9 @@
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :define-function-like-macro))
-                         &key)
-  (make-instance 'define-function-like-macro))
+                         &key
+                         ellipsis?)
+  (make-instance 'define-function-like-macro :ellipsis? ellipsis?))
 
 (defmethod bp:relate ((builder  builder)
                       (relation (eql :name))
