@@ -67,7 +67,9 @@
 
 (defrule h-header-name-start
     (and #\< (! #\<))
-  (:constant :system))
+  (:constant :system)
+  (:use-cache nil)
+  (:error-report :detail))
 
 (defrule h-char-sequence
     (+ (not (or #\Newline #\>)))
@@ -75,7 +77,9 @@
 
 (defrule q-header-name-start
     #\"
-  (:constant :local))
+  (:constant :local)
+  (:use-cache nil)
+  (:error-report :detail))
 
 (defrule q-char-sequence
     (+ (not (or #\Newline #\")))
@@ -218,18 +222,27 @@
    (bp:node* (:include :filename filename :bounds (cons start end)))))
 
 (define-control-line-rule define-identifier-line keyword-|define| ; TODO lparen stuff not handled?
-    (and identifier (? (and punctuator-|(| identifier-list punctuator-|)|))
+    (and identifier (? (and punctuator-|(| macro-argument-list punctuator-|)|))
          (* pp-token))
   ((name (&optional open parameters close) replacement)
    (declare (ignore open close))
    (if parameters
-       (bp:node* (:define-function-like-macro :bounds (cons start end))
-         (1 :name        name)
-         (* :parameter   parameters)
-         (* :replacement replacement))
+       (destructuring-bind (parameters ellipsis) parameters
+         (bp:node* (:define-function-like-macro :ellipsis? (if ellipsis t nil)
+                                                :bounds    (cons start end))
+           (1 :name        name)
+           (* :parameter   parameters)
+           (* :replacement replacement)))
        (bp:node* (:define-object-like-macro :bounds (cons start end))
          (1 :name        name)
          (* :replacement replacement)))))
+
+(defrule macro-argument-list
+    (or (and identifier-list (? (and punctuator-|,|    punctuator-|...|)))
+        (and (and)              (and (and)          (? punctuator-|...|))))
+  (:destructure (identifiers (&optional comma ellipsis))
+    (declare (ignore comma))
+    (list identifiers ellipsis)))
 
 (define-control-line-rule undef-line keyword-|undef|
     (and identifier)

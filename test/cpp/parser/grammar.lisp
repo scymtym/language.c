@@ -15,6 +15,8 @@
      (:token (((:identifier ))))
      :bounds (0 .30))))
 
+;;; If
+
 (define-rule-test if-section
   ("#if foo~%#endif" '(:if
                        (:test (((:identifier () :name "foo" :bounds (4 . 7)))))
@@ -56,6 +58,49 @@ typedef __gnuc_va_list va_list;
 #endif // foo
 " 'list :rule 'if-section)))
 
+;;; Control lines
+
+(define-rule-test define-identifier-line
+  ("define"   nil)
+  ("define 1" nil)
+
+  ("define foo"
+   '(:define-object-like-macro
+     (:name (((:identifier () :name "foo" :bounds (7 . 10)))))
+     :bounds (0 . 10)))
+  ("define foo 1"
+   '(:define-object-like-macro
+     (:replacement (((:number     () :value "1"  :bounds (11 . 12))))
+      :name        (((:identifier () :name "foo" :bounds ( 7 . 10)))))
+     :bounds (0 . 12)))
+
+  ("define foo()"
+   '(:define-function-like-macro
+     (:name (((:identifier () :name "foo" :bounds (7 . 10)))))
+     :ellipsis? nil :bounds (0 . 12)))
+  ("define foo() x"
+   '(:define-function-like-macro
+     (:replacement (((:identifier () :name "x"   :bounds (13 . 14))))
+      :name        (((:identifier () :name "foo" :bounds ( 7 . 10)))))
+     :ellipsis? nil :bounds (0 . 14)))
+  ("define foo(...)"
+   '(:define-function-like-macro
+     (:name (((:identifier () :name "foo" :bounds (7 . 10)))))
+     :ellipsis? t :bounds (0 . 15)))
+  ("define foo(x,y)"
+   '(:define-function-like-macro
+     (:parameter (((:identifier () :name "x"   :bounds (11 . 12)))
+                  ((:identifier () :name "y"   :bounds (13 . 14))))
+      :name      (((:identifier () :name "foo" :bounds (7 . 10)))))
+     :ellipsis? nil :bounds (0 . 15)))
+  ("define foo(x,...)"
+   '(:define-function-like-macro
+     (:parameter (((:identifier () :name "x"   :bounds (11 . 12))))
+      :name      (((:identifier () :name "foo" :bounds (7 . 10)))))
+     :ellipsis? t :bounds (0 . 17))))
+
+;;;
+
 (define-rule-test constant-expression
   ("0 && 0"
    '(:binary-expression
@@ -74,7 +119,7 @@ typedef __gnuc_va_list va_list;
                   :unsigned? nil
                   :bounds    (5 . 6)))))
      :operator :&& :bounds (0 . 6)))
-  ; ("0 ## 0 ( 0 )" "y")
+                                        ; ("0 ## 0 ( 0 )" "y")
   )
 
 

@@ -34,8 +34,10 @@
    #:punctuator-|.| #:sign
 
    #:punctuator-|(| #:punctuator-|)|
-   #:punctuator-|#| ; TODO why is this shared?
-   ; #:|if| #:|else|
+
+   #:punctuator-|...|
+
+   #:punctuator-|,| #:punctuator-# ; TODO why is this shared?
 
    #:identifier-list
    #:identifier
@@ -55,5 +57,7 @@
    #:group
 
    #:if-section
+
+   #:define-identifier-line
 
    #:constant-expression))
