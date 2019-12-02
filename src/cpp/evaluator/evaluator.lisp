@@ -69,7 +69,7 @@
                      (target      t))
   (let* ((test-expression
            (evaluate-to-string (model:test element)
-                               (make-instance 'undefined-is-0-environment :parent environment)))
+                               (make-instance 'test-environment :parent environment)))
          (test-ast
            (architecture.builder-protocol:with-builder ('list)
              (esrap:parse 'language.c.shared.parser::constant-expression (string-trim '(#\Space) test-expression)

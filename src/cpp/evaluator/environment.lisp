@@ -183,14 +183,16 @@
     (setf (lookup name (call-environment environment))
           (make-instance 'object-like-macro :replacement value))))
 
+;;; `test-environment'
 ;;;
+;;; An environment with special evaluation rules for evaluating the
+;;; test of an `if' node.
 
-;; TODO test-environment
-(defclass undefined-is-0-environment (child-environment-mixin)
+(defclass test-environment (child-environment-mixin)
   ())
 
 (defmethod evaluate ((element     model:identifier)
-                     (environment undefined-is-0-environment)
+                     (environment test-environment)
                      (target      t))
   (if (string= (model:name element) "defined")
       (lambda (remainder environment target)
@@ -202,15 +204,15 @@
 
 (defmethod substitution ((name        t)
                          (macro       null)
-                         (environment undefined-is-0-environment))
+                         (environment test-environment))
   "0")
 
 (defmethod substitution ((name        t)
                          (macro       empty-macro)
-                         (environment undefined-is-0-environment))
+                         (environment test-environment))
   "1")
 
 (defmethod substitution ((name        t)
                          (macro       object-like-macro)
-                         (environment undefined-is-0-environment))
+                         (environment test-environment))
   (replacement macro))
