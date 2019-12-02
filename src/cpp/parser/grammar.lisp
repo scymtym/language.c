@@ -16,8 +16,10 @@
 
 ;;; A.1.1 Lexical elements
 
-;; TODO must not define keyword, make esrap check
-(deftokens (keyword t :skippable            (or whitespace/same-line* (and #\\ #\Newline)) ; TODO make a rule for this
+(defrule skippable/same-logical-line*
+    (* (or whitespace/same-line (and #\\ #\Newline))))
+
+(deftokens (keyword t :skippable            skippable/same-logical-line*
                       :requires-separation? t)
   |if| |ifdef| |ifndef|
   |else| |elif|
@@ -32,7 +34,7 @@
   |on| |off| |default|)
 
 (defrule punctuator-token ; TODO can be avoided if shared grammar makes a node
-    (and (! (and punctuator-|#| keyword)) punctuator) ; TODO punctuactors eat newlines
+    (and (! (and punctuator-|#| keyword)) punctuator)
   (:function second)
   (:lambda (which &bounds start end)
     (bp:node* (:punctuator :which which :bounds (cons start end)))))
