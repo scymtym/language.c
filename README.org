@@ -110,9 +110,31 @@
           e))
     #+END_SRC
 
-** TODO The C language
+** STARTED The C language
 
-*** TODO Parsing
+*** STARTED Parsing
+
+    #+BEGIN_SRC lisp :exports both :results value verbatim
+      (language.c.c.parser:parse "int f() { return 1; }" 'list)
+    #+END_SRC
+
+    #+RESULTS:
+    #+begin_example
+    (:TRANSLATION-UNIT
+     (:DECLARATION
+      (((:FUNCTION-DEFINITION
+         (:BODY
+          (((:RETURN-STATEMENT
+             (:VALUE
+              ((((:CONSTANT NIL :TYPE :INTEGER :VALUE 1 :SIZE NIL :UNSIGNED? NIL
+                  :BOUNDS (17 . 18))))))
+             :BOUNDS (10 . 18))))
+          :RETURN ((:INT)) :NAME (((:IDENTIFIER NIL :NAME "f" :BOUNDS (4 . 5)))))
+         :BOUNDS (0 . 21)))))
+     :BOUNDS (0 . 21))
+    NIL
+    T
+    #+end_example
 
 *** TODO Evaluating
 
