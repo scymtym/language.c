@@ -26,16 +26,18 @@
                        &key (target      *standard-output*)
                             (environment (error "missing argument")))
   (let* ((builder (make-instance 'language.c.preprocessor.model:builder))
-         (ast     (language.c.preprocessor.parser:parse source builder)))
-    (language.c.preprocessor.evaluator:evaluate ast environment target)))
+         (ast     (language.c.preprocessor.parser:parse source builder))
+         (tokens  (language.c.preprocessor.evaluator:evaluate ast '() environment)))
+    (language.c.preprocessor.evaluator::output tokens target)))
 
 (defmethod preprocess ((source pathname)
                        &key (target      *standard-output*)
                             (search-path *default-search-path*)
                             (environment (make-environment source search-path)))
   (let* ((builder (make-instance 'language.c.preprocessor.model:builder))
-         (ast     (language.c.preprocessor.parser:parse source builder)))
-    (language.c.preprocessor.evaluator:evaluate ast environment target)))
+         (ast     (language.c.preprocessor.parser:parse source builder))
+         (tokens  (language.c.preprocessor.evaluator:evaluate ast '() environment)))
+    (language.c.preprocessor.evaluator::output tokens target)))
 
 ;;; Parsing
 

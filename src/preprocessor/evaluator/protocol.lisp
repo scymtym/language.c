@@ -12,10 +12,6 @@
 
 (defgeneric (setf lookup) (new-value name environment))
 
-(defgeneric expand (name environment))
-
-(defgeneric substitution (name macro environment)) ; TODO better name?
-
 ;;; File protocol
 ;;;
 ;;; Allows tracking the currently processed file as well as resolving
@@ -29,48 +25,7 @@
 
 (defgeneric resolve-include (environment kind name)) ; TODO environment should be last parameter
 
-;;; Evaluation protocol
-
-;; TODO rename first parameter to node?
-(defgeneric evaluate (element environment target)
-  (:argument-precedence-order environment element target)
-  (:documentation
-   "Evaluate ELEMENT in ENVIRONMENT writing the result to TARGET."))
-
 ;;; Default behavior
-
-(defmethod evaluate ((element sequence) (environment t) (target stream))
-  (let ((first?   t)
-        (previous))
-    (labels ((rec (remainder)
-               (when (consp remainder)
-                 (cond (first?
-                        )
-                       ((member previous '(:punctuator :nothing)))
-                       ((member previous '(:identifier :number))
-                        (write-char #\Space target))
-                       (t
-                        (princ previous target)
-                        (write-char #\Space target)))
-                 (destructuring-bind (first . rest) remainder
-                   (let ((result (evaluate first environment target)))
-                     (typecase result
-                       (string ; TODO currently needed for identifiers that evaluate to strings
-                        (setf first? nil)
-                        (setf previous :identifier) ; HACK
-                        (write-string result target)
-                        (rec rest))
-                                        ; (function expansion)
-                       (function
-                        (rec (funcall result rest environment target)))
-                       (sequence
-                        (rec (append (coerce result 'list) rest)))
-                       (t
-                        (setf first? nil)
-                        (setf previous result)
-                        (rec rest))))))))
-      (rec (coerce element 'list)))
-    previous))
 
 (defmethod resolve-include ((environment t) (kind t) (name t))
   nil)
@@ -79,8 +34,44 @@
   (or (call-next-method)
       (error "~@<Could not resolve ~A include ~S.~@:>" kind name)))
 
-;;; Utilities
+;;; Evaluation protocol
+
+;; TODO rename first parameter to node?
+(defgeneric evaluate (element remainder environment)
+  (:argument-precedence-order environment element remainder)
+  (:documentation
+   "Evaluate ELEMENT in ENVIRONMENT writing the result to TARGET."))
+
+(defgeneric output (element target)
+  (:documentation
+   "TODO"))
 
 (defun evaluate-to-string (element environment)
   (with-output-to-string (stream)
-    (evaluate element environment stream)))
+    (output (evaluate element '() environment) stream)))
+
+;;; Default behavior
+
+(defmethod evaluate ((element sequence) (remainder t) (environment t))
+  (unless (and (emptyp element) (emptyp remainder))
+    (values (loop :with (first . rest) = (append (coerce element 'list) (coerce remainder 'list)) ; TODO slow
+                  :for r = rest :then (rest new-remainder)
+                  :for e = first :then (first new-remainder)
+                  :for (value new-remainder)
+                     = (multiple-value-list
+                        (evaluate e r environment))
+                  :appending value
+                  :while new-remainder)
+            '())))
+
+(defmethod output ((element character) (target stream))
+  (write-char element target))
+
+(defmethod output ((element list) (target stream))
+  (loop :for previous = nil :then token
+        :for token :in element
+        :when (and previous
+                   (typep previous '(or model::identifier model::number*))
+                   (typep token '(or model::identifier model::number*)))
+        :do (write-char #\Space target)
+        :do (output token target)))

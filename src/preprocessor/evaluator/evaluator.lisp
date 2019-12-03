@@ -12,61 +12,40 @@
 ;;; Lexical elements
 
 (defmethod evaluate ((element     model::single-token-mixin)
-                     (environment t)
-                     (target      stream))
-  (write-string (model::token-string element) target)
-  :done)
+                     (remainder   t)
+                     (environment t))
+  (values (list element) remainder))
+
+(defmethod output ((token model::single-token-mixin) (target stream))
+  (write-string (model::token-string token) target))
 
 (defmethod evaluate ((element     model:identifier)
-                     (environment t)
-                     (target      stream))
-  (expand (model:name element) environment))
-
-(defmethod evaluate ((element     model::number*)
-                     (environment t)
-                     (target      stream))
-  (write-string (model::token-string element) target)
-  :number)
-
-(defmethod evaluate ((element     model::punctuator)
-                     (environment t)
-                     (target      stream))
-  (write-string (model::token-string element) target)
-  :punctuator)
-
-(defmethod evaluate ((element     model:header-name)
-                     (environment t)
-                     (target      stream))
-  (multiple-value-bind (open close)
-      (ecase (model:kind element)
-        (:system (values #\< #\>))
-        (:local  (values #\" #\")))
-    (write-char open target)
-    (write-string (model::token-string element) target)
-    (write-char close target))
-  :punctuator)
+                     (remainder   t)
+                     (environment t))
+  (if-let ((macro (lookup (model:name element) environment)))
+    (evaluate macro remainder environment)
+    (values (list element) remainder)))
 
 ;;;
 
 (defmethod evaluate ((element     model:line)
-                     (environment t)
-                     (target      stream))
-  (evaluate (model:tokens element) environment target)
-  (terpri target)
-  :newline)
+                     (remainder   t)
+                     (environment t))
+  (multiple-value-bind (result remainder) (evaluate (model:tokens element) '() environment)
+    (values (append result (list #\Newline)) remainder)))
 
 ;;; Group
 
 (defmethod evaluate ((element     model:group)
-                     (environment t)
-                     (target      t))
-  (evaluate (model:parts element) environment target)
-  :done)
+                     (remainder   t)
+                     (environment t))
+  (values (mapcan (rcurry #'evaluate '() environment) (coerce (model:parts element) 'list)) ; TODO coerce
+          remainder))
 
 ;;; 6.10.1 Conditional inclusion
 (defmethod evaluate ((element     model:if*)
-                     (environment t)
-                     (target      t))
+                     (remainder   t)
+                     (environment t))
   (let* ((test-expression
            (evaluate-to-string (model:test element)
                                (make-instance 'test-environment :parent environment)))
@@ -83,7 +62,7 @@
            (successor   (if result
                             (model:then element)
                             (model:else element))))
-      (evaluate successor environment target))))
+      (evaluate successor remainder environment))))
 
 ;;; Control lines
 
@@ -92,17 +71,18 @@
   (if (typep nodes '(cons model::header-name null)) ; TODO
       (first nodes)
       (let* ((string (evaluate-to-string nodes environment))
-             (ast    (language.c.preprocessor.parser:parse
+             (ast    (language.c.preprocessor.parser:parse ; TODO make a helper function for this
                       string (make-instance 'model:builder))))
         ast)))
 
 (defmethod evaluate ((element     model:include)
-                     (environment environment)
-                     (target      t))
+                     (remainder   t)
+                     (environment environment))
   (let* ((header-name (evaluate-header-name
                        (model:filename element) environment))
          (kind        (model:kind header-name))
-         (name        (model:name header-name)))
+         (name        (model:name header-name))
+         (result      '()))
     (tagbody
      :retry
        (restart-case
@@ -113,7 +93,7 @@
                (unwind-protect
                     (let ((ast (language.c.preprocessor.parser:parse
                                 content (make-instance 'model:builder))))
-                      (evaluate ast environment target)
+                      (setf result (evaluate ast '() environment))
                       (go :done))
                  (pop-file environment))))
          (continue (&optional condition)
@@ -130,56 +110,87 @@
            ;; TODO reset environment
            (go :retry)))
      :done
-       (return-from evaluate :done))))
+       (return-from evaluate (values result remainder)))))
 
 ;;; 6.10.3 Macro replacement
 (defmethod evaluate ((element     model:define-object-like-macro)
-                     (environment environment)
-                     (target      t))
+                     (remainder   t)
+                     (environment environment))
   (let ((name        (model:name (model:name element)))
         (replacement (model:replacement element))) ; TODO make this more explicit?
     (setf (lookup name environment)
           (if (emptyp replacement)
               (make-instance 'empty-macro)
               (make-instance 'object-like-macro :replacement replacement))))
-  :nothing)
+  (values '() remainder))
 
 (defmethod evaluate ((element     model:define-function-like-macro)
-                     (environment environment)
-                     (target      t))
+                     (remainder   t)
+                     (environment environment))
   (let ((name        (model:name (model:name element)))
         (parameters  (model:parameters element))
         (replacement (model:replacement element))) ; TODO make this more explicit?
     (setf (lookup name environment)
           (make-instance 'function-like-macro :parameters  parameters
                                               :replacement replacement)))
-  :nothing)
+  (values '() remainder))
 
 (defmethod evaluate ((element     model:undefine)
-                     (environment environment)
-                     (target      t))
+                     (remainder   t)
+                     (environment environment))
   (let ((name (model:name (model:name element))))
     (remhash name (entries environment)))
-  :nothing)
+  (values '() remainder))
+
+(defmethod evaluate ((element     empty-macro)
+                     (remainder   t)
+                     (environment environment))
+  (values '() remainder))
+
+(defmethod evaluate ((element     object-like-macro)
+                     (remainder   t)
+                     (environment environment))
+  (values (coerce (replacement element) 'list) remainder))
+
+(defmethod evaluate ((element     function-like-macro)
+                     (remainder   t)
+                     (environment t))
+  (let ((parameters  (map 'list 'model:name (parameters element)))
+        (replacement (replacement element)))
+    (let* ((call-environment     (make-instance 'child-environment
+                                                :parent environment))
+           (argument-environment (make-instance 'argument-collecting-environment
+                                                :call-environment call-environment
+                                                :parameters       parameters
+                                                :parent           environment)))
+      (loop :with (first . rest) = remainder
+            :for c = first :then (first new-remainder)
+            :for r = rest :then (rest new-remainder)
+            :for (result new-remainder done?)
+               = (multiple-value-list
+                  (evaluate c r argument-environment))
+            :until done?
+            :finally (return (values (evaluate replacement '() call-environment) new-remainder))))))
+
+;;; 6.10.5, 6.10.6 Directives
 
 (defmethod evaluate ((element     model:error*)
-                     (environment environment)
-                     (target      t))
+                     (remainder   t)
+                     (environment environment))
   (error "not implemented"))
 
 (defmethod evaluate ((element     model:pragma)
-                     (environment environment)
-                     (target      t))
+                     (remainder   t)
+                     (environment environment))
   (let* ((first-token  (first (model::tokens element)))
          (token-string (model::token-string first-token)))
     (if-let ((which (find-symbol token-string '#:keyword)))
-      (evaluate-pragma which element environment target)
+      (evaluate-pragma which element environment)
       (cerror "Ignore the directive" "Unknown directive ~A" token-string)))
-  :nothing)
+  (values '() remainder))
 
 (defmethod evaluate-pragma ((which       (eql :|once|))
                             (element     model:pragma)
-                            (environment include-environment)
-                            (target      t))
+                            (environment include-environment))
   (let ((current-file (first (include-stack environment))))
     (setf (gethash current-file (included-files environment)) t)))
