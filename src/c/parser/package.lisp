@@ -68,6 +68,8 @@
 
    #:goto-statement
    #:continue-statement
+   #:break-statement
+   #:return-statement
 
    ;; Translation unit and toplevel
    #:translation-unit

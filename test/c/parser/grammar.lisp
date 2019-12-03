@@ -109,24 +109,52 @@
   )
 
 (define-rule-test initializer-list
-  (".foo = { 1 }" ()))
+  (".foo = { 1 }"
+   '(:initializer
+     (:expression)
+     :bounds (0 . 12))))
 
 ;;; A.2.3 Statements
 
 (define-rule-test for-statement
-  ("for ( x = 1; x < 10; ++x) {}" ()))
+  ("for (;;) {}"
+   '(:for-statement
+     ()
+     :bounds (0 . 11)))
+  ("for (int x = 1; x < 10; ++x) {}"
+   '(:for-statement
+     (:step ()
+      :test ()
+      :init ())
+     :bounds (0 . 31))))
 
 (define-rule-test goto-statement
-  ("goto foo" '(:goto-statement
-                ()
-                :label  (:identifier () :name "foo" :bounds (5 . 8))
+  ("goto foo"
+   '(:goto-statement
+     (:label (((:identifier () :name "foo" :bounds (5 . 8)))))
+     :bounds (0 . 8)))
+  ("goto /* gogogo */ foo"
+   '(:goto-statement
+     (:label (((:identifier () :name "foo" :bounds (18 . 21)))))
+     :bounds (0 . 21))))
+
+(define-rule-test continue-statement
+  ("continue" '(:continue-statement () :bounds (0 . 8))))
+
+(define-rule-test break-statement
+  ("break" '(:break-statement () :bounds (0 . 5))))
+
+(define-rule-test return-statement
+  ("return"   '(:return-statement () :bounds (0 . 6)))
+  ("return 1" '(:return-statement
+                (:value (((:constant
+                           ()
+                           :type      :integer
+                           :value     1
+                           :size      nil
+                           :unsigned? nil
+                           :bounds    (7 . 8)))))
                 :bounds (0 . 8))))
-
-(define-rule-test goto-statement
-  ("goto foo /* gogogo */ ;" '(:goto-statement
-                               ()
-                               :label  (:identifier () :name "foo" :bounds (5 . 8))
-                               :bounds (0 . 8))))
 
 ;;; A.2.4 External definitions
 

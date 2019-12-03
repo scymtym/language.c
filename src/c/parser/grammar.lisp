@@ -63,11 +63,13 @@
 (defrule postfix-expression/primary
     (and primary-expression/?s postfix-expression*)
   (:destructure (primary postfix)
-    (reduce #'funcall (reverse postfix) :initial-value primary :from-end t))) ; TODO avoid reverse
+    (if postfix
+        (reduce #'funcall (reverse postfix) :initial-value primary :from-end t) ; TODO avoid reverse
+        primary)))
 
 (defrule postfix-expression*
     ;; TODO this was (* ...) in the original grammar
-    (+ (or subscript
+    (* (or subscript
            arguments
            (and punctuator-|.| identifier)
            (and punctuator--> identifier)
@@ -84,7 +86,8 @@
         (1 :index      index)))))
 
 (defrule arguments
-    (and punctuator-|(| (* argument-expression-list) punctuator-|)|))
+    (and punctuator-|(| (* argument-expression-list) punctuator-|)|)
+  (:function second))
 
 (defrule argument-expression-list
     (and assignment-expression (* (and punctuator-|,| argument-expression))))
@@ -111,11 +114,11 @@
 
 (defrule cast-expression
     (or unary-expression
-        (and punctuator-|(| type-name punctuator-|)| cast-expression)))
+        (and type-name/parentheses cast-expression)))
 
 (defrule assignment-expression
-    ;; TODO POSTFIX-EXPRESSION is not here in the original grammar
-    (or proper-assignment-expression postfix-expression conditional-expression ; TODO CONDITIONAL-EXPRESSION is in shared grammar => no postfix-expression
+    ;; TODO UNARY-EXPRESSION is not here in the original grammar
+    (or proper-assignment-expression conditional-expression unary-expression ; TODO CONDITIONAL-EXPRESSION is in shared grammar => no postfix-expression
         ))
 
 (defrule proper-assignment-expression
@@ -127,10 +130,18 @@
       (1 :right right))))
 
 (deftokens (assignment-operator t :skippable whitespace*)
-  |=| |*=| |/=| |%=| |+=| |-=| |<<=| |>>=| |&=| |^=| |\|=|)
+  = *= /= %= += -= <<= >>= &= ^= \|=)
 
-(define-separator-list-rule expression
-  assignment-expression punctuator-|,|)
+(defrule expression
+    (and assignment-expression (* expression-rest))
+  (:destructure (first second)
+    (if second
+        (list* first second)
+        first)))
+
+(defrule expression-rest
+    (and punctuator-|,| assignment-expression)
+  (:function second))
 
 (define-bracket-rule expression/parentheses (punctuator-|(| punctuator-|)|)
     expression)
@@ -166,8 +177,11 @@
   (:function second))
 
 (defrule init-declarator
-    (or declarator
-        (and declarator |=| initializer)))
+    (and declarator (? (and punctuator-|=| initializer)))
+  (:destructure (name (&optional equals initializer) &bounds start end)
+    (bp:node* (:init-declarator :bounds (cons start end) )
+      (1    :name        name)
+      (bp:? :initializer initializer))))
 
 (defrule storage-class-specifier
     (or keyword-|typedef|
@@ -259,14 +273,21 @@
     (and keyword-|_Alignas| punctuator-|(| (or type-name constant-expression) punctuator-|)|))
 
 (defrule declarator
-    (and (? pointer) direct-declarator))
+    (and (? pointer) direct-declarator)
+  (:destructure (pointer? declarator &bounds start end)
+    (bp:node* (:declarator :pointer? pointer? :bounds (cons start end))
+      (1 :declarator declarator))))
 
 (defrule declarator/parentheses
     (and punctuator-|(| declarator punctuator-|)|)
   (:function second))
 
 (defrule direct-declarator
-    (and (or identifier declarator/parentheses) direct-declarator*))
+    (and (or identifier declarator/parentheses) direct-declarator*)
+  (:destructure (name suffixes &bounds start end)
+    (bp:node* (:direct-declarator :bounds (cons start end))
+      (1 :name   name)
+      (* :suffix suffixes))))
 
 (defrule direct-declarator*
     (* (or (and punctuator-[ (? type-qualifier-list) (? assignment-expression) punctuator-])
@@ -447,11 +468,12 @@
 
 (defrule for-statement
     (and keyword-|for| punctuator-|(|
-         (or declaration (? expression)) punctuator-|;|
+         (or (and declaration)
+             (and (? expression) punctuator-|;|))
          (? expression) punctuator-|;|
          (? expression)
          punctuator-|)| statement)
-  (:destructure (keyword open init semi1 test semi2 step close body
+  (:destructure (keyword open (init &optional semi1) test semi2 step close body
                  &bounds start end)
     (declare (ignore keyword open semi1 semi2 close))
     (bp:node* (:for-statement :bounds (cons start end))
