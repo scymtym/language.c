@@ -1,10 +1,10 @@
-;;;; language.c.cpp.model.asd --- System definition for the cpp.model module.
+;;;; language.c.preprocessor.model.asd --- System definition for the preprocessor.model module.
 ;;;;
 ;;;; Copyright (C) 2019 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(defsystem "language.c.cpp.model"
+(defsystem "language.c.preprocessor.model"
   :description "Syntax tree classes for the C preprocessor language"
   :license     "GPLv3" ; see COPYING for details
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
@@ -15,24 +15,24 @@
                 "architecture.builder-protocol")
 
   :components  ((:module     "model"
-                 :pathname   "src/cpp/model"
+                 :pathname   "src/preprocessor/model"
                  :serial     t
                  :components ((:file       "package")
                               (:file       "classes")
                               (:file       "builder"))))
 
-  :in-order-to ((test-op (test-op "language.c.cpp.model/test"))))
+  :in-order-to ((test-op (test-op "language.c.preprocessor.model/test"))))
 
-(defsystem "language.c.cpp.model/test"
-  :description "Unit tests for the language.c.cpp.model system"
+(defsystem "language.c.preprocessor.model/test"
+  :description "Unit tests for the language.c.preprocessor.model system"
   :license     "GPLv3" ; see COPYING for details
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
 
   :depends-on ((:version "fiveam" "1.4")
 
-               "language.c.cpp.model")
+               "language.c.preprocessor.model")
 
   :components ()
 
   :perform    (test-op (operation component)
-                (uiop:symbol-call '#:language.c.cpp.parser.test '#:run-tests)))
+                (uiop:symbol-call '#:language.c.preprocessor.parser.test '#:run-tests)))

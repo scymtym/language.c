@@ -1,10 +1,10 @@
-;;;; classes.lisp --- Classes provided by the cpp.model module.
+;;;; classes.lisp --- Classes provided by the preprocessor.model module.
 ;;;;
 ;;;; Copyright (C) 2019 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:in-package #:language.c.cpp.model)
+(cl:in-package #:language.c.preprocessor.model)
 
 ;;; Utilities
 

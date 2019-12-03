@@ -1,10 +1,10 @@
-;;;; package.lisp --- Package definition for the cpp.model module.
+;;;; package.lisp --- Package definition for the preprocessor.model module.
 ;;;;
 ;;;; Copyright (C) 2019 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:defpackage #:language.c.cpp.model
+(cl:defpackage #:language.c.preprocessor.model
   (:use
    #:cl)
 
