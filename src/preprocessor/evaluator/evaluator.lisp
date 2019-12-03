@@ -7,7 +7,7 @@
 ;;;; This implements the semantics described in "6.10 Preprocessing
 ;;;; directives".
 
-(cl:in-package #:language.c.cpp.evaluator)
+(cl:in-package #:language.c.preprocessor.evaluator)
 
 ;;; Lexical elements
 
@@ -92,7 +92,7 @@
   (if (typep nodes '(cons model::header-name null)) ; TODO
       (first nodes)
       (let* ((string (evaluate-to-string nodes environment))
-             (ast    (language.c.cpp.parser:parse
+             (ast    (language.c.preprocessor.parser:parse
                       string (make-instance 'model:builder))))
         ast)))
 
@@ -111,7 +111,7 @@
              (unless (eq content t)
                (push-file filename environment)
                (unwind-protect
-                    (let ((ast (language.c.cpp.parser:parse
+                    (let ((ast (language.c.preprocessor.parser:parse
                                 content (make-instance 'model:builder))))
                       (evaluate ast environment target)
                       (go :done))

@@ -4,7 +4,7 @@
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:in-package #:language.c.cpp.evaluator)
+(cl:in-package #:language.c.preprocessor.evaluator)
 
 ;;; Macros
 ;;;

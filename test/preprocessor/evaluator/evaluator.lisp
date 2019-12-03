@@ -4,11 +4,11 @@
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:in-package #:language.c.cpp.evaluator.test)
+(cl:in-package #:language.c.preprocessor.evaluator.test)
 
-(in-suite :language.c.cpp.evaluator)
+(in-suite :language.c.preprocessor.evaluator)
 
-#+no (let* ((group (language.c.cpp.parser:parse
+#+no (let* ((group (language.c.preprocessor.parser:parse
                "#if !(defined FOO) && (BAR < 10)
 #endif"
                (make-instance 'model:builder)))

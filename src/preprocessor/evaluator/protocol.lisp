@@ -1,10 +1,10 @@
-;;;; protocol.lisp --- Protocol provided by the cpp.evaluator module.
+;;;; protocol.lisp --- Protocol provided by the preprocessor.evaluator module.
 ;;;;
 ;;;; Copyright (C) 2019 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:in-package #:language.c.cpp.evaluator)
+(cl:in-package #:language.c.preprocessor.evaluator)
 
 ;;; Environment protocol
 
