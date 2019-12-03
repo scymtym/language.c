@@ -1,10 +1,10 @@
-;;;; protocol.lisp --- Protocol functions provided by the cpp.parser module.
+;;;; protocol.lisp --- Protocol functions provided by the preprocessor.parser module.
 ;;;;
 ;;;; Copyright (C) 2019 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:in-package #:language.c.cpp.parser)
+(cl:in-package #:language.c.preprocessor.parser)
 
 (defgeneric parse (input builder &key rule))
 

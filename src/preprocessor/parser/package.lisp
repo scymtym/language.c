@@ -1,10 +1,10 @@
-;;;; package.lisp --- Package definition for the cpp.parser module
+;;;; package.lisp --- Package definition for the preprocessor.parser module
 ;;;;
 ;;;; Copyright (C) 2019 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:defpackage #:language.c.cpp.parser
+(cl:defpackage #:language.c.preprocessor.parser
   (:use
    #:cl
    #:alexandria)

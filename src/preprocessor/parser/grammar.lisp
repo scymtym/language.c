@@ -12,7 +12,7 @@
 ;;;; The lparen, replacement-list and pp-tokens rules and not defined
 ;;;; as rules.
 
-(cl:in-package #:language.c.cpp.parser)
+(cl:in-package #:language.c.preprocessor.parser)
 
 ;;; A.1.1 Lexical elements
 

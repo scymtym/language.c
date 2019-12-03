@@ -1,13 +1,13 @@
-;;;; grammar.lisp --- Tests for the grammar rules of the cpp.parser module
+;;;; grammar.lisp --- Tests for the grammar rules of the preprocessor.parser module
 ;;;;
 ;;;; Copyright (C) 2019 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
-(cl:in-package #:language.c.cpp.parser.test)
+(cl:in-package #:language.c.preprocessor.parser.test)
 
-(def-suite* :language.c.cpp.parser.grammar
-  :in :language.c.cpp.parser)
+(def-suite* :language.c.preprocessor.parser.grammar
+  :in :language.c.preprocessor.parser)
 
 (define-rule-test group
   ("typedef __gnuc_va_list va_list;~%#   define _VA_LIST_DEFINED~%"
