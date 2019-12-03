@@ -128,11 +128,18 @@
 
 (defclass argument-collecting-environment (child-environment-mixin)
   ((%call-environment :initarg  :call-environment
-                      :reader   call-environment)
+                      :reader   %call-environment)
    (%state            :accessor state
                       :initform :open-paren)
+   (%argument         :accessor %argument
+                      :initform '())
    (%parameters       :initarg  :parameters
                       :accessor parameters)))
+
+(defmethod call-environment ((object argument-collecting-environment))
+  (unless (eq (state object) :done)
+    (error "Incomplete macro call expression"))
+  (%call-environment object))
 
 (defmethod evaluate ((element     model::punctuator)
                      (remainder   t)
@@ -142,15 +149,28 @@
              (unless (eq expected got)
                (error "Expected ~(~A~) but got ~(~A~) for macro ~A"
                       expected got :TODO)))
-           (setf (state environment) new)))
+           (setf (state environment) new))
+         (flush-argument ()
+           (let ((name (pop (parameters environment))))
+             (setf (lookup name (%call-environment environment))
+                   (make-instance 'object-like-macro :replacement (%argument environment)))
+             (setf (%argument environment) '())
+             (setf (state environment) (cond ((parameters environment)
+                                              :comma)
+                                             ;; TODO ellipsis
+                                             (t
+                                              :close-paren))))))
     (case (model::which element)
       (:|(|
        (state-transition :open-paren :argument)
        (values '() remainder))
       (:|,|
+       (flush-argument)
        (state-transition :comma :argument)
        (values '() remainder))
       (:|)|
+       (when (parameters environment)
+         (flush-argument))
        (state-transition :close-paren :done)
        (values '() remainder t))
       (t
@@ -161,17 +181,12 @@
                      (environment argument-collecting-environment))
   (let ((state (state environment)))
     (unless (eq state :argument)
-      (error "Expected ~(~A~) but got argument macro ~A"
-             state :TODO)))
-  (let ((name (pop (parameters environment))))
-    (multiple-value-bind (value remainder)
-        (evaluate element remainder (parent environment))
-      (setf (lookup name (call-environment environment))
-            (make-instance 'object-like-macro :replacement value))
-      (setf (state environment) (if (parameters environment)
-                                    :comma
-                                    :close-paren))
-      (values '() remainder))))
+      (error "Expected ~(~A~) but got argument (~A) macro ~A"
+             state element :TODO)))
+  (multiple-value-bind (value remainder)
+      (evaluate element remainder (parent environment))
+    (appendf (%argument environment) value)
+    (values '() remainder)))
 
 ;;; `test-environment'
 ;;;

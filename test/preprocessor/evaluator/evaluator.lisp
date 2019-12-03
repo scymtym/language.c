@@ -24,13 +24,17 @@
   (map nil (lambda (case)
              (destructuring-bind (input expected) case
                (let* ((input       (format nil input))
-                      (expected    (format nil expected))
                       (builder     (make-instance 'model:builder))
                       (ast         (parser:parse input builder))
-                      (environment (make-instance 'environment))
-                      (result      (with-output-to-string (stream)
-                                     (evaluate ast environment stream))))
-                 (is (string= expected result)))))
+                      (environment (make-instance 'environment)))
+                 (flet ((do-it ()
+                          (with-output-to-string (stream)
+                            (language.c.preprocessor.evaluator::output
+                             (evaluate ast '() environment) stream))))
+                   (case expected
+                     (error (signals error (do-it)))
+                     (t     (let ((expected (format nil expected)))
+                              (is (string= expected (do-it))))))))))
        cases))
 
 (test group.smoke
@@ -67,13 +71,25 @@
   "Unsorted tests"
   (eval-cases
    '("\"foo\"" "\"foo\"~%")
+   '("#define foo(x) x~%foo(1~%" error)
+   '("#define foo(x,y) x + y~%baz foo(foo(1,2),foo(3,4)"
+     error)
 
    '("#define foo 1, 2~@
       #define bar(x,y) x+y~@
       bar(foo)"
-     "1+2")))
+     "1+2~%")
 
-   '("#define foo(x,y) x + y~%baz foo(foo(1,2),foo(3,4)"
-     "baz 1+2+3+4")
+   '("#define foo(x,y) x + y~%baz foo(foo(1,2),foo(3,4))"
+     "baz 1+2+3+4~%")
    '("#define foo(x,y) x + y~%#define bar foo(3,4)~%baz foo(foo(1,2),bar)"
-     "baz 1+2+3+4")))
+     "baz 1+2+3+4~%")
+
+   '("#define foo(x,y) x + y~@
+      baz foo(foo(1,2),foo(3,4))~%"
+     "baz 1+2+3+4~%")
+   '("#define foo(x,y) x + y~@
+      #define foo2(x,y) x + y~@
+      #define bar foo2(3,4)~@
+      baz foo(foo(1,2),bar)"
+     "baz 1+2+3+4~%")))

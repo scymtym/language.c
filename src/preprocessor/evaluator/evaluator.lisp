@@ -26,6 +26,15 @@
     (evaluate macro remainder environment)
     (values (list element) remainder)))
 
+(defmethod output ((token model::header-name) (target stream))
+  (multiple-value-bind (open close)
+      (ecase (model:kind token)
+        (:system (values #\< #\>))
+        (:local  (values #\" #\")))
+    (write-char open target)
+    (write-string (model::token-string token) target)
+    (write-char close target)))
+
 ;;;
 
 (defmethod evaluate ((element     model:line)
@@ -150,7 +159,7 @@
 (defmethod evaluate ((element     object-like-macro)
                      (remainder   t)
                      (environment environment))
-  (values (coerce (replacement element) 'list) remainder))
+  (values '() (append (coerce (replacement element) 'list) remainder)))
 
 (defmethod evaluate ((element     function-like-macro)
                      (remainder   t)
@@ -167,10 +176,10 @@
             :for c = first :then (first new-remainder)
             :for r = rest :then (rest new-remainder)
             :for (result new-remainder done?)
-               = (multiple-value-list
-                  (evaluate c r argument-environment))
-            :until done?
-            :finally (return (values (evaluate replacement '() call-environment) new-remainder))))))
+               = (multiple-value-list (evaluate c r argument-environment))
+            :do (print c)
+            :while (and new-remainder (not done?))
+            :finally (return (values (evaluate replacement '() (call-environment argument-environment)) new-remainder))))))
 
 ;;; 6.10.5, 6.10.6 Directives
 

@@ -40,7 +40,11 @@
 (defgeneric evaluate (element remainder environment)
   (:argument-precedence-order environment element remainder)
   (:documentation
-   "Evaluate ELEMENT in ENVIRONMENT writing the result to TARGET."))
+   "Evaluate ELEMENT with successors REMAINDER in ENVIRONMENT"))
+
+(defgeneric evaluate-pragma (which element environment)
+  (:documentation
+   "Evaluate the pragma indicated by WHICH in ENVIRONMENT."))
 
 (defgeneric output (element target)
   (:documentation
