@@ -10,8 +10,8 @@
   :author      "Jan Moringen <jmoringe@techfak.uni-bielefeld.de>"
 
   :version     (:read-file-form "version-string.sexp")
-  :depends-on  ("language.c.cpp.parser"
-                "language.c.cpp.evaluator"
+  :depends-on  ("language.c.preprocessor.parser"
+                "language.c.preprocessor.evaluator"
 
                 "language.c.c.parser")
 

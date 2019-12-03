@@ -12,7 +12,7 @@
     #+(and linux x86-64) #P"/usr/include/x86_64-linux-gnu/"))
 
 (defun make-environment (source search-path)
-  (make-instance 'language.c.cpp.evaluator:include-environment
+  (make-instance 'language.c.preprocessor.evaluator:include-environment
                  :file        source ; TODO this should initialize include-stack and included-files
                  :search-path search-path
                  :include-stack (list source)
@@ -25,17 +25,17 @@
 (defmethod preprocess ((source string)
                        &key (target      *standard-output*)
                             (environment (error "missing argument")))
-  (let* ((builder (make-instance 'language.c.cpp.model:builder))
-         (ast     (language.c.cpp.parser:parse source builder)))
-    (language.c.cpp.evaluator:evaluate ast environment target)))
+  (let* ((builder (make-instance 'language.c.preprocessor.model:builder))
+         (ast     (language.c.preprocessor.parser:parse source builder)))
+    (language.c.preprocessor.evaluator:evaluate ast environment target)))
 
 (defmethod preprocess ((source pathname)
                        &key (target      *standard-output*)
                             (search-path *default-search-path*)
                             (environment (make-environment source search-path)))
-  (let* ((builder (make-instance 'language.c.cpp.model:builder))
-         (ast     (language.c.cpp.parser:parse source builder)))
-    (language.c.cpp.evaluator:evaluate ast environment target)))
+  (let* ((builder (make-instance 'language.c.preprocessor.model:builder))
+         (ast     (language.c.preprocessor.parser:parse source builder)))
+    (language.c.preprocessor.evaluator:evaluate ast environment target)))
 
 ;;; Parsing
 
@@ -56,7 +56,7 @@
         :for input = (concatenate 'string (or input "") line (string #\Newline))
         :do (handler-case
                 (progn
-                  (language.c.cpp.parser:parse input 'list) ; TODO builder should be NIL
+                  (language.c.preprocessor.parser:parse input 'list) ; TODO builder should be NIL
                   (return input))
               (error ()))
             (funcall prompt output-stream :continuation)))
