@@ -44,17 +44,17 @@
 *** STARTED Parsing
 
     The ability to parse the C preprocessor language is provided by
-    the ~language.c.cpp.parser~ systems.
+    the ~language.c.preprocessor.parser~ systems.
 
     #+BEGIN_SRC lisp :exports results :results silent
-      (ql:quickload '#:language.c.cpp.parser)
+      (ql:quickload '#:language.c.preprocessor.parser)
     #+END_SRC
 
     After loading that system, a inputs such as strings and files can
     be parsed using the ~parse~ generic function:
 
     #+BEGIN_SRC lisp :exports both :results value verbatim
-      (language.c.cpp.parser:parse "#define foo 1 + 2" 'list)
+      (language.c.preprocessor.parser:parse "#define foo 1 + 2" 'list)
     #+END_SRC
 
     #+RESULTS:
@@ -80,33 +80,34 @@
     representation of the parse tree.
 
     Another possibility is producing a parse tree consisting of
-    instances of classes defined in the ~language.c.cpp.model~
+    instances of classes defined in the ~language.c.preprocessor.model~
     package:
 
     #+BEGIN_SRC lisp :exports both :results value verbatim
-      (language.c.cpp.parser:parse "#define foo 1 + 2"
-                                   (make-instance 'language.c.cpp.model:builder))
+      (language.c.preprocessor.parser:parse
+       "#define foo 1 + 2"
+       (make-instance 'language.c.preprocessor.model:builder))
     #+END_SRC
 
     #+RESULTS:
-    : #<LANGUAGE.C.CPP.MODEL:GROUP {10023739B3}>
+    : #<LANGUAGE.C.PREPROCESSOR.MODEL:GROUP {10023739B3}>
     : NIL
     : T
 
 *** STARTED Evaluating Syntax Trees
 
     #+BEGIN_SRC lisp
-      (let ((ast (language.c.cpp.parser:parse
+      (let ((ast (language.c.preprocessor.parser:parse
                   (format nil "#ifdef foo~@
                                #define foo 1~@
                                foo bar~@
                                baz fez~@
                                #endif~@
                                ")
-                  (make-instance 'language.c.cpp.model:builder)))
-            ((environment (make-instance 'language.c.cpp.evaluator::environment))))
+                  (make-instance 'language.c.preprocessor.model:builder)))
+            ((environment (make-instance 'language.c.preprocessor.evaluator::environment))))
         (let ()
-          (language.c.cpp.evaluator:evaluate ast e *standard-output*)
+          (language.c.preprocessor.evaluator:evaluate ast e *standard-output*)
           e))
     #+END_SRC
 
