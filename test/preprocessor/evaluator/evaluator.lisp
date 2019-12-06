@@ -66,4 +66,8 @@
 (test unsorted.smoke                    ; TODO obviously
   "Unsorted tests"
   (eval-cases
-   '("\"foo\"" "\"foo\"~%")))
+   ; '("\"foo\"" "\"foo\"~%")
+   '("#define foo 1, 2~@
+      #define bar(x,y) x+y~@
+      bar(foo)"
+     "1+2")))
