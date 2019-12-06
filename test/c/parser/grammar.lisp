@@ -52,6 +52,9 @@
       :name       (((:identifier () :name "foo" :bounds (5 . 8)))))
      :bounds (0 . 20))))
 
+(define-rule-test declarator
+  ("*const**" '(:declarator)))
+
 (define-rule-test brace-initializer
   ("{ .foo = 1 }"
    '(:brace-initializer
@@ -173,4 +176,5 @@ a
 (
 /*foo */
 int x) { return 1; }"
-   '(:function-definition)))
+   '(:function-definition))
+  ("int *const*foo(int x) {}"))

@@ -179,7 +179,8 @@
 (defrule init-declarator
     (and declarator (? (and punctuator-|=| initializer)))
   (:destructure (name (&optional equals initializer) &bounds start end)
-    (bp:node* (:init-declarator :bounds (cons start end) )
+    (declare (ignore equals))
+    (bp:node* (:init-declarator :bounds (cons start end))
       (1    :name        name)
       (bp:? :initializer initializer))))
 
@@ -273,10 +274,12 @@
     (and keyword-|_Alignas| punctuator-|(| (or type-name constant-expression) punctuator-|)|))
 
 (defrule declarator
-    (and (? pointer) direct-declarator)
-  (:destructure (pointer? declarator &bounds start end)
-    (bp:node* (:declarator :pointer? pointer? :bounds (cons start end))
-      (1 :declarator declarator))))
+    (and (? pointer-list) direct-declarator)
+  (:destructure (pointers declarator &bounds start end)
+    (if pointers
+        (bp:node* (:declarator :pointer? pointers :bounds (cons start end))
+          (1 :declarator declarator))
+        declarator)))
 
 (defrule declarator/parentheses
     (and punctuator-|(| declarator punctuator-|)|)
@@ -292,7 +295,7 @@
 (defrule direct-declarator*
     (* (or (and punctuator-[ (? type-qualifier-list) (? assignment-expression) punctuator-])
            (and punctuator-[ keyword-|static| (? type-qualifier-list) assignment-expression punctuator-])
-           (and punctuator-[ type-qualifier-list |static| assignment-expression punctuator-])
+           (and punctuator-[ type-qualifier-list keyword-|static| assignment-expression punctuator-])
            (and punctuator-[ (? type-qualifier-list) punctuator-* punctuator-])
            parameter-type-list
            identifier-list/parentheses)))
@@ -301,11 +304,14 @@
     (and punctuator-|(| (? identifier-list) punctuator-|)|)
   (:function second))
 
-(defrule pointer
-    (and punctuator-* (? type-qualifier-list) (? pointer))
-  (:function rest))
+(defrule pointer-list
+    (+ pointer))
 
-(defrule type-qualifier-list
+(defrule pointer
+    (and punctuator-* (? type-qualifier-list))
+  (:function second))
+
+(defrule type-qualifier-list ; TODO remove this rule?
     (+ type-qualifier))
 
 (define-bracket-rule parameter-type-list (punctuator-|(| punctuator-|)|)
@@ -332,8 +338,8 @@
     type-name)
 
 (defrule abstract-declarator
-    (or pointer
-        (and (? pointer) direct-abstract-declarator)))
+    (or pointer-list
+        (and (? pointer-list) direct-abstract-declarator)))
 
 (defrule direct-abstract-declarator
     (or (and punctuator-|(| abstract-declarator punctuator-|)|)
