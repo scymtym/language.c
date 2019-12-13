@@ -11,7 +11,8 @@
 (declaim (inline %parse))
 (defun %parse (rule input)
   (let ((language.c.shared.parser::*skippable-mode*            :whitespace/same-line)
-        (language.c.shared.parser::*floating-point-constants?* nil))
+        (language.c.shared.parser::*floating-point-constants?* nil)
+        (language.c.shared.parser::*extended-unary-expression* 'unary-expression))
     (esrap:parse rule input)))
 
 (defmethod parse ((input string) (builder t) &key (rule 'preprocessing-file))

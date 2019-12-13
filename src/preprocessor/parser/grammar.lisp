@@ -300,3 +300,18 @@
 
 (defrule on-off-switch ; TODO unused?
     (or keyword-|on| keyword-|off| keyword-|default|))
+
+;;; Constant expression
+
+(defrule unary-operator
+    (or language.c.shared.parser::unary-operator
+        keyword-|defined|))
+
+(parser.common-rules.operators:define-unary-operator-rule unary-expression
+  unary-operator language.c.shared.parser::primary-expression
+  :skippable?-expression (and)
+  :node-kind             :unary-expression)
+
+(bp:with-builder ('list)
+  (let ((language.c.shared.parser::*extended-unary-expression* 'unary-expression))
+   (esrap:parse 'constant-expression "defined 1")))

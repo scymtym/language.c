@@ -41,7 +41,7 @@
 
 ;;; Parsing
 
-(defmethod parse ((source pathname) &rest args &key search-path)
+(defmethod parse ((source t) &rest args &key search-path &allow-other-keys)
   (let* ((preprocessed-input (with-output-to-string (stream)
                                (apply #'preprocess source :target stream args)))
          (builder            'list      ; (make-instance 'language.c.)

@@ -400,6 +400,13 @@
     (or                      ; (and |(| type-name |)| cast-expression)
      unary-expression))
 
+(defun invoke-unary-expression (text position end)
+  (esrap:parse *extended-unary-expression* text
+               :start position :end end :raw t))
+(defrule extended-unary-expression
+    #'invoke-unary-expression
+  (:when *extended-unary-expression*))
+
 (parser.common-rules.operators:define-operator-rules
     (:skippable?-expression (and)
      :binary-node-kind      :binary-expression
@@ -416,7 +423,7 @@
   (2 shift-expression          (or punctuator-<< punctuator->>))
   (2 additive-expression       (or punctuator-+  punctuator--))
   (2 multiplicative-expression (or punctuator-*  punctuator-/ punctuator-%))
-  cast-expression)
+  (or extended-unary-expression cast-expression))
 
 (defrule constant-expression
     conditional-expression

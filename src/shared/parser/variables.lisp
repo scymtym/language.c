@@ -12,3 +12,5 @@
 (defvar *skippable-mode* :whitespace/same-line)
 
 (defvar *floating-point-constants?* nil)
+
+(defvar *extended-unary-expression* nil)
