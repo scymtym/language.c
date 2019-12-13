@@ -73,13 +73,13 @@
 
 (defclass group ()
   ((%parts :reader   parts
-           :initform (make-array 0 :adjustable t :fill-pointer 0))))
+           :initform (make-array 1 :adjustable t :fill-pointer 0))))
 
 ;;;
 
 (defclass line ()
   ((%tokens :reader   tokens
-            :initform (make-array 0 :adjustable t :fill-pointer 0))))
+            :initform (make-array 1 :adjustable t :fill-pointer 0))))
 
 ;;;
 
@@ -92,7 +92,7 @@
    (%test :initarg  :test
           :reader   test
                                         ; :writer  (setf %test)
-          :initform (make-array 0 :adjustable t :fill-pointer 0))
+          :initform (make-array 1 :adjustable t :fill-pointer 0))
    (%then :initarg  :then
           :reader   then
           :writer   (setf %then)
@@ -106,7 +106,8 @@
 
 (defclass include ()
   ((%filename :initarg :filename
-              :reader  filename)))
+              :reader  filename
+              :writer  (setf %filename))))
 
 (defclass define ()
   ((%name        :initarg  :name ; TODO is the name expanded first? otherwise make a name-mixin
@@ -134,12 +135,14 @@
           ())
 
 (defclass error* ()
-  ((%message :initarg :message
-             :reader  message)))
+  ((%message :initarg  :message
+             :reader   message
+             :initform (make-array 0 :adjustable t :fill-pointer 0))))
 
 (defclass pragma (utilities.print-items:print-items-mixin)
-  ((%tokens :initarg :tokens
-            :reader  tokens)))
+  ((%tokens :initarg  :tokens
+            :reader   tokens
+            :initform (make-array 0 :adjustable t :fill-pointer 0))))
 
 (defmethod print-items:print-items append ((object pragma))
   `((:first-token ,(token->string (first (tokens object))))))

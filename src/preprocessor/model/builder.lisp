@@ -83,6 +83,9 @@
   (vector-push-extend right (parts left))
   left)
 
+(defmethod bp:make-node ((builder builder) (kind (eql :comment)) &key) ; TODO should we move this?
+  nil)
+
 ;;; If
 
 (defmethod bp:make-node ((builder builder)
@@ -120,8 +123,16 @@
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :include))
-                         &key filename) ; TODO as relation
-  (make-instance 'include :filename filename))
+                         &key)
+  (make-instance 'include))
+
+(defmethod bp:relate ((builder builder)
+                      (relation (eql :filename))
+                      (left     include)
+                      (right    t)
+                      &key)
+  (setf (%filename left) right)
+  left)
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :define-object-like-macro))
@@ -165,10 +176,26 @@
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :error))
-                         &key message)
-  (make-instance 'error* :message message))
+                         &key)
+  (make-instance 'error*))
+
+(defmethod bp:relate ((builder builder)
+                      (relation (eql :message))
+                      (left     error*)
+                      (right    t)
+                      &key)
+  (vector-push-extend right (message left))
+  left)
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :pragma))
-                         &key tokens)
-  (make-instance 'pragma :tokens tokens))
+                         &key)
+  (make-instance 'pragma))
+
+(defmethod bp:relate ((builder  builder)
+                      (relation (eql :token))
+                      (left     pragma)
+                      (right    t)
+                      &key)
+  (vector-push-extend right (tokens left))
+  left)
