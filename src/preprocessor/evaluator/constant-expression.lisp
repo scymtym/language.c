@@ -29,6 +29,13 @@
                      (if (find 0 operands :key #'rec) 0 1))
                     (:\|\|
                      (if (find 1 operands :key #'rec) 1 0))
+                    ((:+ :- :* :/)
+                     (apply (ecase operator
+                              (:- '-)
+                              (:+ '+)
+                              (:* '*)
+                              (:/ '/))
+                            (map 'list #'rec operands)))
                     (t
                      (if (apply (ecase operator
                                   (:<  '<)
@@ -36,9 +43,7 @@
                                   (:<= '<=)
                                   (:>= '>=)
                                   (:== '=)
-                                  (:!= '/=)
-                                  (:-  '-)
-                                  (:+  '+))
+                                  (:!= '/=))
                                 (map 'list #'rec operands))
                          1 0)))))
                (:ternary-expression

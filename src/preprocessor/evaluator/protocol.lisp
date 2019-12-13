@@ -56,15 +56,27 @@
 
 ;;; Default behavior
 
+(defun identifier= (left right) ; TODO move to model? implement token= generic function?
+  (and (typep left 'model:identifier)
+       (typep right 'model:identifier)
+       (string= (model:name left) (model:name right))))
+
 (defmethod evaluate ((element sequence) (remainder t) (environment t))
   (unless (and (emptyp element) (emptyp remainder))
     (values (loop :with (first . rest) = (append (coerce element 'list) (coerce remainder 'list)) ; TODO slow
+                  :with suppressed     = '()
                   :for r = rest :then (rest new-remainder)
                   :for e = first :then (first new-remainder)
-                  :for (value new-remainder)
-                     = (multiple-value-list
-                        (evaluate e r environment))
+                  :for (value new-remainder new-suppressed)
+                     = (if (find e suppressed :test #'identifier= :key #'car)
+                           (list (list e) r)
+                           (multiple-value-list
+                            (evaluate e r environment)))
                   :appending value
+                  :do (let ((reduced (delete e suppressed :test #'eq :key #'cdr)))
+                        (setf suppressed (if new-suppressed
+                                             (list* new-suppressed reduced)
+                                             reduced)))
                   :while new-remainder)
             '())))
 

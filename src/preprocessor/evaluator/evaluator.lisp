@@ -23,7 +23,22 @@
                      (remainder   t)
                      (environment t))
   (if-let ((macro (lookup (model:name element) environment)))
-    (evaluate macro remainder environment)
+    ;; ELEMENT names a macro MACRO which we evaluate to get its
+    ;; EXPANSION and a new REMAINDER. The expansion will be
+    ;; "re-scanned" by our caller according to the rules in 6.10.3.4
+    ;; Rescanning and further replacement. If ELEMENT occurs in
+    ;; EXPANSION (for example "foo" expanding to "1 foo 2"), this
+    ;; occurrence must not be evaluated as a macro. To allow our
+    ;; caller to do this, we return a third value which is
+    ;;
+    ;;   (ELEMENT . END)
+    ;;
+    ;; where END is (lastcar REMAINDER). The caller can use this to
+    ;; not evaluate ELEMENT as a macro until it has scanned beyond
+    ;; END.
+    (multiple-value-bind (expansion remainder)
+        (evaluate macro remainder environment)
+      (values expansion remainder (cons element (lastcar remainder))))
     (values (list element) remainder)))
 
 (defmethod output ((token model::header-name) (target stream))
@@ -60,8 +75,8 @@
                                (make-instance 'test-environment :parent environment)))
          (test-ast
            (architecture.builder-protocol:with-builder ('list)
-             (esrap:parse 'language.c.shared.parser::constant-expression (string-trim '(#\Space) test-expression)
-                          )))) ; TODO do this without trimming
+             (language.c.preprocessor.parser::%parse
+              'language.c.shared.parser::constant-expression (string-trim '(#\Space) test-expression))))) ; TODO do this without trimming
                                         ; (evaluate test-ast environment target)
     (let* ((test-result (eval-constant-expression test-ast))
            (result      (ecase (model:kind element)
@@ -122,9 +137,10 @@
        (return-from evaluate (values result remainder)))))
 
 ;;; 6.10.3 Macro replacement
+
 (defmethod evaluate ((element     model:define-object-like-macro)
                      (remainder   t)
-                     (environment environment))
+                     (environment t))
   (let ((name        (model:name (model:name element)))
         (replacement (model:replacement element))) ; TODO make this more explicit?
     (setf (lookup name environment)
@@ -135,9 +151,9 @@
 
 (defmethod evaluate ((element     model:define-function-like-macro)
                      (remainder   t)
-                     (environment environment))
+                     (environment t))
   (let ((name        (model:name (model:name element)))
-        (parameters  (model:parameters element))
+        (parameters  (map 'list #'model:name (model:parameters element)))
         (replacement (model:replacement element))) ; TODO make this more explicit?
     (setf (lookup name environment)
           (make-instance 'function-like-macro :parameters  parameters
@@ -146,52 +162,46 @@
 
 (defmethod evaluate ((element     model:undefine)
                      (remainder   t)
-                     (environment environment))
+                     (environment t))
   (let ((name (model:name (model:name element))))
     (remhash name (entries environment)))
   (values '() remainder))
 
 (defmethod evaluate ((element     empty-macro)
                      (remainder   t)
-                     (environment environment))
+                     (environment t))
   (values '() remainder))
 
 (defmethod evaluate ((element     object-like-macro)
                      (remainder   t)
-                     (environment environment))
+                     (environment t))
   (values '() (append (coerce (replacement element) 'list) remainder)))
 
 (defmethod evaluate ((element     function-like-macro)
                      (remainder   t)
                      (environment t))
-  (let ((parameters  (map 'list 'model:name (parameters element)))
-        (replacement (replacement element)))
-    (let* ((call-environment     (make-instance 'child-environment
-                                                :parent environment))
-           (argument-environment (make-instance 'argument-collecting-environment
-                                                :call-environment call-environment
-                                                :parameters       parameters
-                                                :parent           environment)))
-      (loop :with (first . rest) = remainder
-            :for c = first :then (first new-remainder)
-            :for r = rest :then (rest new-remainder)
-            :for (result new-remainder done?)
-               = (multiple-value-list (evaluate c r argument-environment))
-            :do (print c)
-            :while (and new-remainder (not done?))
-            :finally (return (values (evaluate replacement '() (call-environment argument-environment)) new-remainder))))))
+  (loop :with argument-environment = (make-argument-collecting-environment
+                                      (parameters element) environment)
+        :for (first . rest) = remainder :then new-remainder
+        :for (result new-remainder done?)
+           = (multiple-value-list (evaluate first rest argument-environment))
+        :while (and new-remainder (not done?))
+        :finally (let* ((environment (call-environment argument-environment))
+                        (replacement (replacement element))
+                        (expansion   (evaluate replacement '() environment)))
+                   (return (values expansion new-remainder)))))
 
 ;;; 6.10.5, 6.10.6 Directives
 
 (defmethod evaluate ((element     model:error*)
                      (remainder   t)
-                     (environment environment))
-  (error "not implemented"))
+                     (environment t))
+  (error "~{~A~^ ~}" (coerce (model::message element) 'list)))
 
 (defmethod evaluate ((element     model:pragma)
                      (remainder   t)
-                     (environment environment))
-  (let* ((first-token  (first (model::tokens element)))
+                     (environment t))
+  (let* ((first-token  (first-elt (model::tokens element)))
          (token-string (model::token-string first-token)))
     (if-let ((which (find-symbol token-string '#:keyword)))
       (evaluate-pragma which element environment)

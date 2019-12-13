@@ -131,10 +131,17 @@
                       :reader   %call-environment)
    (%state            :accessor state
                       :initform :open-paren)
-   (%argument         :accessor %argument
+   (%argument         :accessor %argument ; TODO arguments
                       :initform '())
    (%parameters       :initarg  :parameters
                       :accessor parameters)))
+
+(defun make-argument-collecting-environment (parameters environment)
+  (make-instance 'argument-collecting-environment
+                 :call-environment (make-instance 'child-environment
+                                                  :parent environment)
+                 :parameters       parameters
+                 :parent           environment))
 
 (defmethod call-environment ((object argument-collecting-environment))
   (unless (eq (state object) :done)
@@ -151,13 +158,15 @@
                       expected got :TODO)))
            (setf (state environment) new))
          (flush-argument ()
-           (let ((name (pop (parameters environment))))
+           (let ((name (or (pop (parameters environment))
+                           "__VA_ARGS__")))
              (setf (lookup name (%call-environment environment))
                    (make-instance 'object-like-macro :replacement (%argument environment)))
              (setf (%argument environment) '())
              (setf (state environment) (cond ((parameters environment)
                                               :comma)
-                                             ;; TODO ellipsis
+                                             (t ; (model::ellipsis? )
+                                              :comma/ellipsis)
                                              (t
                                               :close-paren))))))
     (case (model::which element)
@@ -165,13 +174,15 @@
        (state-transition :open-paren :argument)
        (values '() remainder))
       (:|,|
-       (flush-argument)
-       (state-transition :comma :argument)
+       (when (eq (state environment) :argument)
+         (flush-argument))
+       (case (state environment)
+         (:comma          (state-transition :comma          :argument))
+         (:comma/ellipsis (state-transition :comma/ellipsis :rest-argument)))
        (values '() remainder))
       (:|)|
-       (when (parameters environment)
-         (flush-argument))
-       (state-transition :close-paren :done)
+       (flush-argument)
+       (state-transition (if (eq (state environment) :comma/ellipsis) :comma/ellipsis :close-paren) :done)
        (values '() remainder t))
       (t
        (call-next-method)))))
@@ -180,8 +191,8 @@
                      (remainder   t)
                      (environment argument-collecting-environment))
   (let ((state (state environment)))
-    (unless (eq state :argument)
-      (error "Expected ~(~A~) but got argument (~A) macro ~A"
+    (unless (member state '(:argument :rest-argument))
+      (error "X Expected ~(~A~) but got argument (~A) macro ~A"
              state element :TODO)))
   (multiple-value-bind (value remainder)
       (evaluate element remainder (parent environment))
@@ -197,27 +208,33 @@
   ())
 
 (defmethod evaluate ((element     model:identifier)
-                     (environment test-environment)
-                     (target      t))
+                     (remainder   t)
+                     (environment test-environment))
   (if (string= (model:name element) "defined")
-      (lambda (remainder environment target)
-        (destructuring-bind (first &rest rest) remainder
-          (let ((defined? (lookup (model:name first) environment)))
-            (write-string (if defined? "1" "0") target))
-          rest))
+      (destructuring-bind (first &rest rest) remainder
+        (cond ((not (typep first 'model:identifier))
+               (error "Argument of defined operator must be an identifier"))
+              ((lookup (model:name first) environment)
+               (values (load-time-value (list (make-instance 'model:number* :value "1")))
+                       rest))
+              (t
+               (values (load-time-value (list (make-instance 'model:number* :value "0")))
+                       rest))))
       (call-next-method)))
 
-(defmethod substitution ((name        t)
-                         (macro       null)
-                         (environment test-environment))
-  "0")
+(defmethod evaluate ((macro       null)
+                     (remainder   t)
+                     (environment test-environment))
+  (values (load-time-value (list (make-instance 'model:number* :value "0")))
+          remainder))
 
-(defmethod substitution ((name        t)
-                         (macro       empty-macro)
-                         (environment test-environment))
-  "1")
+(defmethod evaluate ((element     empty-macro)
+                     (remainder   t)
+                     (environment test-environment))
+  (values (load-time-value (list (make-instance 'model:number* :value "1")))
+          remainder))
 
-(defmethod substitution ((name        t)
+(defmethod evaluate ((name        t)
                          (macro       object-like-macro)
                          (environment test-environment))
   (replacement macro))

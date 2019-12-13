@@ -44,10 +44,17 @@
   "Smoke test for the evaluation of `if' nodes."
 
   (eval-cases
-   '("x"                          "x~%")
-   '("#if 1~%x~%#endif"           "x~%")
-   '("#if 0~%x~%#else~%y~%#endif" "y~%")
-   '("#if 1~%x~%#else~%y~%#endif" "x~%")))
+   '("x"                                                 "x~%")
+
+   '("#if 1~%x~%#endif"                                  "x~%")
+   '("#if 0~%x~%#else~%y~%#endif"                        "y~%")
+   '("#if 1~%x~%#else~%y~%#endif"                        "x~%")
+   '("#if 0~%x~%#elif 0~%y~%#else~%z~%#endif"            "z~%")
+   '("#if 0~%x~%#elif 1~%y~%#else~%z~%#endif"            "y~%")
+
+   '("#if defined 1~%x~%#endif"                          error)
+   '("#if defined foo~%x~%#else~%y~%#endif"              "y~%")
+   '("#define foo~%#if defined foo~%x~%#else~%y~%#endif" "x~%")))
 
 (test include.smoke
   "Smoke test for the evaluation of `include' nodes.")
@@ -92,4 +99,16 @@
       #define foo2(x,y) x + y~@
       #define bar foo2(3,4)~@
       baz foo(foo(1,2),bar)"
-     "baz 1+2+3+4~%")))
+     "baz 1+2+3+4~%")
+
+   '("#define foo(x) x~@
+     foo(x)"
+     "x~%")
+
+   '("#define foo foo~@
+      foo"
+     "foo~%")
+
+   '("#define foo(x,...) x __VA_ARGS__~@
+      foo(1,2,3,4)"
+     "1 2 3 4~%")))
