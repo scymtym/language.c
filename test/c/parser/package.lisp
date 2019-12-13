@@ -12,6 +12,10 @@
 
    #:language.c.c.parser)
 
+  (:shadowing-import-from #:language.c.c.parser
+   #:keyword
+   #:declaration)
+
   (:export
    #:run-tests))
 

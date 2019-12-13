@@ -159,11 +159,16 @@
                            :bounds    (7 . 8)))))
                 :bounds (0 . 8))))
 
+;; (esrap:parse 'declaration-specifiers "extern static")
+;;
+;; (bp:with-builder ('list)
+;;   (esrap:parse 'declarator "int(a, b)"))
+
 ;;; A.2.4 External definitions
 
 (define-rule-test translation-unit
-  ("extern void main(int argc, char* argv[]) {~%return 0;~%}"
-   '(:translation-unit)))
+    ("extern void main(int argc, char* argv[]) {~%return 0;~%}"
+     '(:translation-unit)))
 
 (define-rule-test function-definition
   ("int f() {}"
@@ -171,6 +176,8 @@
      (:return    ((:int))
       :name      (((:identifier () :name "f" :bounds (4 . 5)))))
      :bounds (0 . 10)))
+  ("typedef int fp(void);")
+  ("int(*fp)(void);")
   ("int
 a
 (
@@ -178,3 +185,6 @@ a
 int x) { return 1; }"
    '(:function-definition))
   ("int *const*foo(int x) {}"))
+
+
+(esrap:parse 'function-definition )

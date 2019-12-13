@@ -155,9 +155,11 @@
 
 (defrule declaration//
     (and declaration-specifiers (? init-declarator-list) punctuator-|;|)
-  (:destructure (specifiers inits semicolon)
+  (:destructure (specifiers inits semicolon &bounds start end)
     (declare (ignore semicolon))
-    (list :declaration specifiers inits)))
+    (bp:node* (:declaration :bounds (cons start end))
+      (* :specifier specifiers)
+      (* :init      inits))))
 
 (defrule declaration-specifiers
     (+ (or storage-class-specifier
@@ -212,7 +214,12 @@
 
 (defrule struct-or-union-specifier
     (or (and struct-or-union (? identifier) punctuator-{ struct-declaration-list punctuator-})
-        (and struct-or-union identifier)))
+        (and struct-or-union identifier))
+  (:destructure (keyword name &optional open body close &bounds start end)
+    (declare (ignore open close))
+    (bp:node* (keyword :bounds (cons start end))
+      (1 :name name)
+      (* :body body))))
 
 (defrule struct-or-union
     (or keyword-|struct| keyword-|union|))
@@ -221,21 +228,35 @@
     (+ struct-declaration))
 
 (defrule struct-declaration
-    (or (and specifier-qualifier-list (? struct-declarator-list) punctuator-|;|)
+    (or struct-declaration/declarator
         static_assert-declaration))
 
-(defrule specifier-qualifier-list
-    (and (or type-specifier
-             type-qualifier
-             alignment-specifier)
-         (? specifier-qualifier-list)))
+(defrule struct-declaration/declarator
+    (and (+ specifier-qualifier) (* struct-declarator) punctuator-|;|)
+  (:destructure (qualifiers declarators semicolon &bounds start end)
+    (declare (ignore semicolon))
+    (bp:node* (:struct-declarator :bounds (cons start end))
+      (* :qualifier  qualifiers)
+      (* :declarator declarators))))
 
-(defrule struct-declarator-list
-    (+ struct-declarator))
-
+(defrule specifier-qualifier
+    (or type-specifier
+        type-qualifier
+        alignment-specifier)
+  (:lambda (specifier &bounds start end)
+    (bp:node* (:specifier-qualifier :specifier specifier
+                                    :bounds    (cons start end)))))
 (defrule struct-declarator
- (or (and (? declarator) punctuator-|:| constant-expression)
-     declarator))
+    (or struct-declarator/proper
+        declarator))
+
+(defrule struct-declarator/proper
+    (and (? declarator) punctuator-|:| constant-expression)
+  (:destructure (declarator colon expression &bounds start end)
+    (declare (ignore colon))
+    (bp:node* (:struct-declarator :bounds (cons start end))
+      (bp:? :declarator declarator)
+      (1    :expression expression))))
 
 (defrule enum-specifier
     (and keyword-|enum| (or (and (? identifier) enum-body)

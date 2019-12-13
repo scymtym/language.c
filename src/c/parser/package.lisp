@@ -10,7 +10,8 @@
    #:alexandria)
 
   (:shadow
-   #:keyword)
+   #:keyword
+   #:declaration)
 
   (:local-nicknames
    (#:bp #:architecture.builder-protocol))
