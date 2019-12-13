@@ -21,7 +21,7 @@
 
 (deftokens (keyword t :skippable            skippable/same-logical-line*
                       :requires-separation? t)
-  |if| |ifdef| |ifndef|
+  |if| |ifdef| |ifndef| |defined|
   |else| |elif|
   |endif|
 
@@ -144,38 +144,44 @@
 
 (defrule top-level-comment
     (and (* (or #\Space #\Tab)) comment (* (or #\Space #\Tab)))
-  (:constant nil))
+  (:function second)
+  (:lambda (content &bounds start end)
+    (bp:node* (:comment :content content :bounds (cons start end)))))
 
 ;;; If
 
 (defrule if-section
-    (and if-group (? elif-groups) (? else-group) endif)
-  (:destructure ((if-keyword if-test then-group) elif else-group keyword
-                 &bounds start end)
-    (declare (ignore elif keyword))
-    (bp:node* (:if :kind if-keyword :bounds (cons start end))
-      (*    :test if-test)
-      (bp:? :then then-group)
-      (bp:? :else else-group))))
-
-(defrule if-group
     (and punctuator-|#| (or (and (or keyword-|ifdef| keyword-|ifndef|) (and identifier)) ; TODO should this also be (+ pp-token)
-                            (and keyword-|if|                  #|constant-expression|# (+ pp-token)))
-         new-line (? (and (! (or elif-groups else-group)) group)))
-  (:function rest)
-  (:destructure ((keyword expression) newline (&optional guard group))
-    (declare (ignore newline guard))
-    (list keyword expression group)))
-
-(defrule elif-groups
-    (+ elif-group))
+                            (and keyword-|if|                          (+ pp-token)))
+         new-line (? (and (! (or elif-group else-group)) group))
+         if-else-section)
+  (:destructure (hash (keyword test) newline (&optional guard then) else
+                 &bounds start end)
+    (declare (ignore hash newline guard))
+    (bp:node* (:if :kind keyword :bounds (cons start end))
+      (*    :test test)
+      (bp:? :then then)
+      (bp:? :else else))))
 
 (defrule elif-group
-    (and punctuator-|#| keyword-|elif| (+ pp-token) #|constant-expression|#
-         new-line (? (and (! (or elif-groups else-group)) group)) (? group))) ; TODO identical to if-group
+    (and punctuator-|#| keyword-|elif| (+ pp-token)
+         new-line (? (and (! (or elif-group else-group)) group))
+         if-else-section)
+  (:destructure (hash keyword test newline (&optional guard then) else
+                 &bounds start end)
+    (declare (ignore hash keyword newline guard))
+    (bp:node* (:if :kind :if :bounds (cons start end))
+      (*    :test test)
+      (bp:? :then then)
+      (bp:? :else else)))) ; TODO identical to if-group
+
+(defrule if-else-section
+    (or (and (or elif-group else-group))
+        (and (and)                      endif))
+  (:function first))
 
 (defrule else-group
-    (and punctuator-|#| keyword-|else| new-line (? group))
+    (and punctuator-|#| keyword-|else| new-line (? group) endif)
   (:function fourth))
 
 (defrule endif
@@ -217,9 +223,11 @@
   (:function third))
 
 (define-control-line-rule include-line keyword-|include|
-    (and (+ pp-token))
+    (and pp-token ; TODO (+ pp-token)
+         )
   ((filename)
-   (bp:node* (:include :filename filename :bounds (cons start end)))))
+   (bp:node* (:include :bounds (cons start end))
+     (1 :filename filename))))
 
 (define-control-line-rule define-identifier-line keyword-|define| ; TODO lparen stuff not handled?
     (and identifier (? (and punctuator-|(| macro-argument-list punctuator-|)|))
@@ -247,7 +255,8 @@
 (define-control-line-rule undef-line keyword-|undef|
     (and identifier)
   ((name)
-   (bp:node* (:undef :name name :bounds (cons start end)))))
+   (bp:node* (:undef :bounds (cons start end))
+     (1 :name name))))
 
 (define-control-line-rule line-line keyword-|line|
     (and (+ pp-token))
@@ -257,12 +266,14 @@
 (define-control-line-rule error-line keyword-|error|
   (and (* pp-token))
   ((message)
-   (bp:node* (:error :message message :bounds (cons start end)))))
+   (bp:node* (:error :bounds (cons start end))
+     (* :message message))))
 
 (define-control-line-rule pragma-line keyword-|pragma|
     (and (* pp-token))
   ((tokens)
-   (bp:node* (:pragma :tokens tokens :bounds (cons start end)))))
+   (bp:node* (:pragma :bounds (cons start end))
+     (* :token tokens))))
 
 ;;; Lexical stuff
 
