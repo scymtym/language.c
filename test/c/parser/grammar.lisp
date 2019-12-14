@@ -176,15 +176,15 @@
      (:return    ((:int))
       :name      (((:identifier () :name "f" :bounds (4 . 5)))))
      :bounds (0 . 10)))
-  ("typedef int fp(void);")
-  ("int(*fp)(void);")
+  ("typedef int fp(void);"
+   '(:function-definition))
+  ("int(*fp)(void);"
+   '(:function-definition))
   ("int
 a
 (
 /*foo */
 int x) { return 1; }"
    '(:function-definition))
-  ("int *const*foo(int x) {}"))
-
-
-(esrap:parse 'function-definition )
+  ("int *const*foo(int x) {}"
+   '(:function-definition)))
