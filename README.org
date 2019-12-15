@@ -42,19 +42,19 @@
    The ~preprocess~ function of this module offers a convenient way of
    preprocessing C code:
 
-   #+BEGIN_SRC lisp :exports both results :results output
-   (language.c.interface:preprocess "#define foo(x) (x<<1)
-   #if foo(1) < 3
-   foo(1) foo(2)
-   #else
-   foo(3) foo(4)
-   #endif
+   #+BEGIN_SRC lisp :exports both :results output
+     (language.c.interface:preprocess "#define foo(x) (x<<1)
+     #if foo(1) < 3
+     foo(1) foo(2)
+     #else
+     foo(3) foo(4)
+     #endif
 
-   #define bar 1 bar 2
-   bar
+     #define bar 1 bar 2
+     bar
 
-   #define baz(x) 1 x baz(2) baz 3
-   baz(4) baz(5)")
+     #define baz(x) 1 x baz(2) baz 3
+     baz(4) baz(5)")
    #+END_SRC
 
    #+RESULTS:
@@ -63,6 +63,34 @@
    : 1 bar 2
    :
    : 1 4 baz(2)baz 3 1 5 baz(2)baz 3
+
+   The other main function is ~parse~:
+
+   #+BEGIN_SRC lisp :exports both :results value
+     (language.c.interface:parse "#define foo main() {
+     int foo
+       return 1;
+     }")
+   #+END_SRC
+
+   #+RESULTS:
+   #+begin_example
+     (:TRANSLATION-UNIT
+      (:DECLARATION
+       (((:FUNCTION-DEFINITION
+          (:BODY
+           (((:RETURN-STATEMENT
+              (:VALUE
+               (((:CONSTANT NIL :TYPE :INTEGER :VALUE 1 :SIZE NIL :UNSIGNED? NIL
+                  :BOUNDS (19 . 20)))))
+              :BOUNDS (12 . 20))))
+           :RETURN ((:INT)) :DECLARATOR
+           (((:DIRECT-DECLARATOR
+              (:NAME (((:IDENTIFIER NIL :NAME MAIN :BOUNDS (4 . 8))))) :BOUNDS
+              (4 . 10)))))
+          :BOUNDS (0 . 24)))))
+      :BOUNDS (0 . 24))
+   #+end_example
 
 ** STARTED The Preprocessor Language
 
@@ -86,11 +114,12 @@
     #+begin_example
     (:GROUP
      (:PART
-      (((:DEFINE NIL :NAME (:IDENTIFIER NIL :NAME "foo" :BOUNDS (8 . 11))
-         :REPLACEMENT
-         ((:NUMBER NIL :VALUE "1" :BOUNDS (12 . 13))
-          (:PUNCTUATOR NIL :WHICH :+ :BOUNDS (14 . 16))
-          (:NUMBER NIL :VALUE "2" :BOUNDS (16 . 17)))
+      (((:DEFINE-OBJECT-LIKE-MACRO
+         (:REPLACEMENT
+          (((:NUMBER NIL :VALUE "1" :BOUNDS (12 . 13)))
+           ((:PUNCTUATOR NIL :WHICH :+ :BOUNDS (14 . 16)))
+           ((:NUMBER NIL :VALUE "2" :BOUNDS (16 . 17))))
+          :NAME (((:IDENTIFIER NIL :NAME "foo" :BOUNDS (8 . 11)))))
          :BOUNDS (1 . 17)))))
      :BOUNDS (0 . 17))
     NIL
@@ -121,20 +150,30 @@
 
 *** STARTED Evaluating Syntax Trees
 
-    #+BEGIN_SRC lisp
-      (let ((ast (language.c.preprocessor.parser:parse
-                  (format nil "#ifdef foo~@
-                               #define foo 1~@
-                               foo bar~@
-                               baz fez~@
-                               #endif~@
-                               ")
-                  (make-instance 'language.c.preprocessor.model:builder)))
-            ((environment (make-instance 'language.c.preprocessor.evaluator::environment))))
-        (let ()
-          (language.c.preprocessor.evaluator:evaluate ast e *standard-output*)
-          e))
+    #+BEGIN_SRC lisp :exports both :results output verbatim
+      (let* ((ast (language.c.preprocessor.parser:parse
+                   (format nil "#if !defined foo~@
+                                #define foo 1~@
+                                foo bar~@
+                                baz fez~@
+                                #endif~@
+                                ")
+                   (make-instance 'language.c.preprocessor.model:builder)))
+             (environment (make-instance 'language.c.preprocessor.evaluator::environment))
+             (result (language.c.preprocessor.evaluator:evaluate
+                      ast '() environment)))
+        (language.c.preprocessor.evaluator::output result *standard-output*)
+        (describe environment))
     #+END_SRC
+
+    #+RESULTS:
+    : 1 bar
+    : baz fez
+    : #<LANGUAGE.C.PREPROCESSOR.EVALUATOR:ENVIRONMENT {101827EEE3}>
+    :   [standard-object]
+    :
+    : Slots with :INSTANCE allocation:
+    :   %ENTRIES                       = #{"foo" :..
 
 ** STARTED The C Language
 
