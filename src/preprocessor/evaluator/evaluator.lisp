@@ -138,34 +138,38 @@
 
 ;;; 6.10.3 Macro replacement
 
-(defmethod evaluate ((element     model:define-object-like-macro)
-                     (remainder   t)
-                     (environment t))
-  (let ((name        (model:name (model:name element)))
-        (replacement (model:replacement element))) ; TODO make this more explicit?
-    (setf (lookup name environment)
-          (if (emptyp replacement)
-              (make-instance 'empty-macro)
-              (make-instance 'object-like-macro :replacement replacement))))
-  (values '() remainder))
+(macrolet ((with-macro-definition ((name-var element remainder) &body body)
+             `(let ((,name-var (model:name (model:name ,element))))
+                ,@body
+                (values '() ,remainder))))
 
-(defmethod evaluate ((element     model:define-function-like-macro)
-                     (remainder   t)
-                     (environment t))
-  (let ((name        (model:name (model:name element)))
-        (parameters  (map 'list #'model:name (model:parameters element)))
-        (replacement (model:replacement element))) ; TODO make this more explicit?
-    (setf (lookup name environment)
-          (make-instance 'function-like-macro :parameters  parameters
-                                              :replacement replacement)))
-  (values '() remainder))
+  (defmethod evaluate ((element     model:define-object-like-macro)
+                       (remainder   t)
+                       (environment t))
+    (with-macro-definition (name element remainder)
+      (setf (lookup name environment)
+            (let ((replacement (model:replacement element)))
+              (if (emptyp replacement)
+                  (make-instance 'empty-macro)
+                  (make-instance 'object-like-macro
+                                 :replacement replacement))))))
 
-(defmethod evaluate ((element     model:undefine)
-                     (remainder   t)
-                     (environment t))
-  (let ((name (model:name (model:name element))))
-    (remhash name (entries environment)))
-  (values '() remainder))
+  (defmethod evaluate ((element     model:define-function-like-macro)
+                       (remainder   t)
+                       (environment t))
+    (with-macro-definition (name element remainder)
+      (setf (lookup name environment)
+            (let ((parameters  (map 'list #'model:name
+                                    (model:parameters element)))
+                  (replacement (model:replacement element)))
+              (make-instance 'function-like-macro :parameters  parameters
+                                                  :replacement replacement)))))
+
+  (defmethod evaluate ((element     model:undefine)
+                       (remainder   t)
+                       (environment t))
+    (with-macro-definition (name element remainder)
+      (remhash name (entries environment)))))
 
 (defmethod evaluate ((element     empty-macro)
                      (remainder   t)
