@@ -33,6 +33,12 @@
   (make-instance 'identifier :name name))
 
 (defmethod bp:make-node ((builder builder)
+                         (kind    (eql :constant))
+                         &key type value)
+  (ecase type
+    (:char (make-instance 'string-literal :value value)))) ; TODO hack
+
+(defmethod bp:make-node ((builder builder)
                          (kind    (eql :number))
                          &key value)
   (make-instance 'number* :value value))
@@ -131,7 +137,7 @@
                       (left     include)
                       (right    t)
                       &key)
-  (setf (%filename left) right)
+  (vector-push-extend right (filename left))
   left)
 
 (defmethod bp:make-node ((builder builder)

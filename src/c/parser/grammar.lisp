@@ -210,7 +210,9 @@
         struct-or-union-specifier
         enum-specifier
         ; typedef-name TODO uncomment and figure out how to make function-definition work despite it
-        ))
+        )
+  (:lambda (which &bounds start end)
+    (bp:node* (:type-specifier :which which :bounds (cons start end)))))
 
 (defrule struct-or-union-specifier
     (or (and struct-or-union (? identifier) punctuator-{ struct-declaration-list punctuator-})

@@ -33,11 +33,36 @@
 
    This module contains convenience functions for preprocessing and
    parsing C code. The corresponding ASDF system and package are both
-   called ~langauge.c.interface~.
+   called ~language.c.interface~.
 
    #+BEGIN_SRC lisp :exports results :results silent
      (ql:quickload '#:language.c.interface)
    #+END_SRC
+
+   The ~preprocess~ function of this module offers a convenient way of
+   preprocessing C code:
+
+   #+BEGIN_SRC lisp :exports both results :results output
+   (language.c.interface:preprocess "#define foo(x) (x<<1)
+   #if foo(1) < 3
+   foo(1) foo(2)
+   #else
+   foo(3) foo(4)
+   #endif
+
+   #define bar 1 bar 2
+   bar
+
+   #define baz(x) 1 x baz(2) baz 3
+   baz(4) baz(5)")
+   #+END_SRC
+
+   #+RESULTS:
+   : (1<<1)(2<<1)
+   :
+   : 1 bar 2
+   :
+   : 1 4 baz(2)baz 3 1 5 baz(2)baz 3
 
 ** STARTED The Preprocessor Language
 
@@ -111,7 +136,7 @@
           e))
     #+END_SRC
 
-** STARTED The C language
+** STARTED The C Language
 
 *** STARTED Parsing
 

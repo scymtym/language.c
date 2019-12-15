@@ -105,9 +105,9 @@
 ;;; Control lines
 
 (defclass include ()
-  ((%filename :initarg :filename
-              :reader  filename
-              :writer  (setf %filename))))
+  ((%filename :initarg  :filename
+              :reader   filename
+              :initform (make-array 1 :adjustable t :fill-pointer 0))))
 
 (defclass define ()
   ((%name        :initarg  :name ; TODO is the name expanded first? otherwise make a name-mixin
@@ -137,12 +137,12 @@
 (defclass error* ()
   ((%message :initarg  :message
              :reader   message
-             :initform (make-array 0 :adjustable t :fill-pointer 0))))
+             :initform (make-array 1 :adjustable t :fill-pointer 0))))
 
 (defclass pragma (utilities.print-items:print-items-mixin)
   ((%tokens :initarg  :tokens
             :reader   tokens
-            :initform (make-array 0 :adjustable t :fill-pointer 0))))
+            :initform (make-array 1 :adjustable t :fill-pointer 0))))
 
 (defmethod print-items:print-items append ((object pragma))
   `((:first-token ,(token->string (first (tokens object))))))

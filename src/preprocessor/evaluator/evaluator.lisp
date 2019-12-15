@@ -96,14 +96,15 @@
       (first nodes)
       (let* ((string (evaluate-to-string nodes environment))
              (ast    (language.c.preprocessor.parser:parse ; TODO make a helper function for this
-                      string (make-instance 'model:builder))))
+                      string (make-instance 'model:builder)
+                      :rule 'language.c.preprocessor.parser::header-name)))
         ast)))
 
 (defmethod evaluate ((element     model:include)
                      (remainder   t)
                      (environment environment))
   (let* ((header-name (evaluate-header-name
-                       (model:filename element) environment))
+                       (coerce (model:filename element) 'list) environment)) ; TODO without coerce
          (kind        (model:kind header-name))
          (name        (model:name header-name))
          (result      '()))

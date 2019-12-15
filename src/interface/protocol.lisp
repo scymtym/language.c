@@ -24,7 +24,7 @@
 
 (defmethod preprocess ((source string)
                        &key (target      *standard-output*)
-                            (environment (error "missing argument")))
+                            (environment (make-instance 'language.c.preprocessor.evaluator::string-environment)))
   (let* ((builder (make-instance 'language.c.preprocessor.model:builder))
          (ast     (language.c.preprocessor.parser:parse source builder))
          (tokens  (language.c.preprocessor.evaluator:evaluate ast '() environment)))

@@ -142,7 +142,7 @@
         text-line
         (and punctuator-|#| non-directive)))
 
-(defrule top-level-comment
+(defrule top-level-comment ; TODO should maybe include newline for //-style comments
     (and (* (or #\Space #\Tab)) comment (* (or #\Space #\Tab)))
   (:function second)
   (:lambda (content &bounds start end)
@@ -223,11 +223,10 @@
   (:function third))
 
 (define-control-line-rule include-line keyword-|include|
-    (and pp-token ; TODO (+ pp-token)
-         )
-  ((filename)
+    (+ pp-token)
+  ((&rest filename)
    (bp:node* (:include :bounds (cons start end))
-     (1 :filename filename))))
+     (* :filename filename))))
 
 (define-control-line-rule define-identifier-line keyword-|define| ; TODO lparen stuff not handled?
     (and identifier (? (and punctuator-|(| macro-argument-list punctuator-|)|))

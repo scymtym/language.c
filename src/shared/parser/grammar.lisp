@@ -259,7 +259,9 @@
     (and (? (or #\L (~ #\u))) #\' c-char-sequence #\')
   (:function third)
   (:lambda (value &bounds start end)
-    (bp:node* (:constant :value value :bounds (cons start end)))))
+    (bp:node* (:constant :type   :char
+                         :value  value
+                         :bounds (cons start end)))))
 
 (defrule c-char-sequence
     (+ c-char)
@@ -290,7 +292,7 @@
 (defrule string-literal
     (and (? encoding-prefix) #\" s-char-sequence #\")
   (:destructure (encoding open value close &bounds start end)
-    (declare (ignore open close))
+    (declare (ignore open close)) ; TODO why not constant :type string?
     (bp:node* (:string-literal :value    value
                                :encoding encoding
                                :bounds   (cons start end)))))
