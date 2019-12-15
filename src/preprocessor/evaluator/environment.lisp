@@ -45,13 +45,6 @@
 (defmethod (setf lookup) ((new-value t) (name t) (environment environment))
   (setf (gethash name (entries environment)) new-value))
 
-(defmethod expand ((name t) (environment t))
-  (let ((macro (lookup name environment)))
-    (substitution name macro environment)))
-
-(defmethod substitution ((name t) (macro null) (environment environment))
-  name)
-
 ;;; `string-environment'
 
 (defclass string-environment (environment)
@@ -110,7 +103,7 @@
         (setf (gethash file included-files)
               (alexandria:read-file-into-string file)))))
 
-;;;
+;;; `child-environment-mixin'
 
 (defclass child-environment-mixin ()
   ((%parent :initarg :parent
@@ -119,9 +112,9 @@
 (defmethod lookup ((name t) (environment child-environment-mixin))
   (lookup name (parent environment)))
 
-;;;
+;;; `child-environment'
 
-(defclass child-environment (child-environment-mixin
+(defclass child-environment (child-environment-mixin ; TODO is this used?
                              environment)
   ())
 
@@ -129,14 +122,14 @@
   (or (gethash name (entries environment)) ; TODO avoid direct access
       (call-next-method)))
 
-;;;
+;;; `argument-collecting-environment'
 
 (defclass argument-collecting-environment (child-environment-mixin)
   ((%call-environment :initarg  :call-environment
                       :reader   %call-environment)
    (%state            :accessor state
                       :initform :open-paren)
-   (%argument         :accessor %argument ; TODO arguments
+   (%argument         :accessor %argument
                       :initform '())
    (%parameters       :initarg  :parameters
                       :accessor parameters)))
@@ -162,10 +155,10 @@
                       expected got :TODO)))
            (setf (state environment) new))
          (flush-argument ()
-           (let ((name (or (pop (parameters environment))
-                           "__VA_ARGS__")))
+           (let ((name (or (pop (parameters environment)) "__VA_ARGS__")))
              (setf (lookup name (%call-environment environment))
-                   (make-instance 'object-like-macro :replacement (%argument environment)))
+                   (make-instance 'object-like-macro
+                                  :replacement (%argument environment)))
              (setf (%argument environment) '())
              (setf (state environment) (cond ((parameters environment)
                                               :comma)
@@ -186,7 +179,10 @@
        (values '() remainder))
       (:|)|
        (flush-argument)
-       (state-transition (if (eq (state environment) :comma/ellipsis) :comma/ellipsis :close-paren) :done)
+       (state-transition (if (eq (state environment) :comma/ellipsis)
+                             :comma/ellipsis
+                             :close-paren)
+                         :done)
        (values '() remainder t))
       (t
        (call-next-method)))))
