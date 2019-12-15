@@ -111,4 +111,11 @@
 
    '("#define foo(x,...) x __VA_ARGS__~@
       foo(1,2,3,4)"
-     "1 2 3 4~%")))
+     "1 2 3 4~%")
+
+   '("#define foo bar~@
+      foo foo"
+     "bar bar~%")
+
+   '("'foo'"
+     "'foo'~%")))

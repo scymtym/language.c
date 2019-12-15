@@ -52,6 +52,11 @@
 (defmethod substitution ((name t) (macro null) (environment environment))
   name)
 
+;;; `string-environment'
+
+(defclass string-environment (environment)
+  ())
+
 ;;; `search-path-environment'
 
 (defclass search-path-environment (environment)
@@ -138,8 +143,7 @@
 
 (defun make-argument-collecting-environment (parameters environment)
   (make-instance 'argument-collecting-environment
-                 :call-environment (make-instance 'child-environment
-                                                  :parent environment)
+                 :call-environment (make-instance 'environment)
                  :parameters       parameters
                  :parent           environment))
 
@@ -192,7 +196,7 @@
                      (environment argument-collecting-environment))
   (let ((state (state environment)))
     (unless (member state '(:argument :rest-argument))
-      (error "X Expected ~(~A~) but got argument (~A) macro ~A"
+      (error "Expected ~(~A~) but got argument (~A) macro ~A"
              state element :TODO)))
   (multiple-value-bind (value remainder)
       (evaluate element remainder (parent environment))

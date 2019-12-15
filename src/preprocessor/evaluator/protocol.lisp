@@ -23,14 +23,14 @@
 
 (defgeneric include (file environment))
 
-(defgeneric resolve-include (environment kind name)) ; TODO environment should be last parameter
+(defgeneric resolve-include (kind name environment))
 
 ;;; Default behavior
 
-(defmethod resolve-include ((environment t) (kind t) (name t))
+(defmethod resolve-include ((kind t) (name t) (environment t))
   nil)
 
-(defmethod resolve-include :around ((environment t) (kind t) (name t))
+(defmethod resolve-include :around ( (kind t) (name t) (environment t))
   (or (call-next-method)
       (error "~@<Could not resolve ~A include ~S.~@:>" kind name)))
 
@@ -48,7 +48,11 @@
 
 (defgeneric output (element target)
   (:documentation
-   "TODO"))
+   "Produce a string by outputting ELEMENT to TARGET.
+
+ELEMENT is usually an already-evaluated sequence of tokens.
+
+TARGET is usually a stream."))
 
 (defun evaluate-to-string (element environment)
   (with-output-to-string (stream)

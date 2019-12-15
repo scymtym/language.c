@@ -38,7 +38,7 @@
     ;; END.
     (multiple-value-bind (expansion remainder)
         (evaluate macro remainder environment)
-      (values expansion remainder (cons element (lastcar remainder))))
+      (values '() (append expansion remainder) (cons element (lastcar expansion))))
     (values (list element) remainder)))
 
 (defmethod output ((token model::header-name) (target stream))
@@ -110,7 +110,7 @@
     (tagbody
      :retry
        (restart-case
-           (let* ((filename (resolve-include environment kind name))
+           (let* ((filename (resolve-include kind name environment))
                   (content  (include filename environment)))
              (unless (eq content t)
                (push-file filename environment)
@@ -175,7 +175,7 @@
 (defmethod evaluate ((element     object-like-macro)
                      (remainder   t)
                      (environment t))
-  (values '() (append (coerce (replacement element) 'list) remainder)))
+  (values (coerce (replacement element) 'list) remainder))
 
 (defmethod evaluate ((element     function-like-macro)
                      (remainder   t)
