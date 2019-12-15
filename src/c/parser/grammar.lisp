@@ -568,11 +568,12 @@
 
 (defrule function-definition
     (and declaration-specifiers declarator (* declaration) compound-statement)
-  (:destructure (specifiers (pointer (name parameters)) declarations body
+  (:destructure (specifiers declarator #+no (pointer (name parameters)) declarations body
                  &bounds start end)
     (bp:node* (:function-definition :bounds (cons start end))
-      (1 :name        name)
+      (1 :declarator declarator)
+      ;; (1 :name        name)
       (* :return      specifiers)
-      (* :parameter   parameters)
+      ;; (* :parameter   parameters)
       (* :declaration declarations)
       (* :body        body))))
