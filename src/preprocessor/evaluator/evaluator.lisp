@@ -1,6 +1,6 @@
 ;;;; evaluator.lisp --- Evaluation rules for nodes.
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -67,6 +67,7 @@
           remainder))
 
 ;;; 6.10.1 Conditional inclusion
+;; TODO #ifdef foo does not work
 (defmethod evaluate ((element     model:if*)
                      (remainder   t)
                      (environment t))
