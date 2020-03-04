@@ -177,8 +177,16 @@
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :undef))
-                         &key name)
-  (make-instance 'undefine :name name))
+                         &key)
+  (make-instance 'undefine))
+
+(defmethod bp:relate ((builder  builder)
+                      (relation (eql :name))
+                      (left     undefine)
+                      (right    t)
+                      &key)
+  (setf (%name left) right)
+  left)
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :error))

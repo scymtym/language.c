@@ -128,7 +128,8 @@
 
 (defclass undefine ()
   ((%name :initarg :name
-          :reader  name)))
+          :reader  name
+          :writer  (setf %name))))
 
 ;; TODO this is the #line control line, but classes with line class defined above
 #+later (defclass line ()
