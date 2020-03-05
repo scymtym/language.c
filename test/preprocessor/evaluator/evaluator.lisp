@@ -8,18 +8,6 @@
 
 (in-suite :language.c.preprocessor.evaluator)
 
-#+no (let* ((group (language.c.preprocessor.parser:parse
-               "#if !(defined FOO) && (BAR < 10)
-#endif"
-               (make-instance 'model:builder)))
-       (string (evaluate-to-string
-                (model:test (first-elt (model:parts group)))
-                (make-instance 'undefined-is-0-environment :parent (make-instance 'environment))))
-       (test-ast
-         (architecture.builder-protocol:with-builder ('list)
-           (esrap:parse 'language.c.shared.parser::constant-expression string))))
-  (list string test-ast (eval-constant-expression test-ast)))
-
 (defun eval-cases (&rest cases)
   (map nil (lambda (case)
              (destructuring-bind (input expected) case
@@ -28,14 +16,25 @@
                       (ast         (parser:parse input builder))
                       (environment (make-instance 'environment)))
                  (flet ((do-it ()
-                          (with-output-to-string (stream)
-                            (language.c.preprocessor.evaluator::output
-                             (evaluate ast '() environment) stream))))
+                          (evaluate-to-string ast environment)))
                    (case expected
                      (error (signals error (do-it)))
-                     (t     (let ((expected (format nil expected)))
-                              (is (string= expected (do-it))))))))))
+                     (t     (let* ((expected (format nil expected))
+                                   (result   (do-it)))
+                              (is (string= expected result)
+                                  "For input ~S, expected ~S but got ~S."
+                                  input expected result))))))))
        cases))
+
+(test lexical-elements.smoke
+  "Smoke test for the evaluation of lexical nodes."
+
+  (eval-cases
+   '("foo"     "foo~%")
+   '("'1'"     "'1'~%")
+   '("1"       "1~%")
+   '("0x10"    "0x10~%")
+   '("\"foo\"" "\"foo\"~%")))
 
 (test group.smoke
   "Smoke test for the evaluation of `group' nodes."
@@ -60,13 +59,18 @@
    '("#if defined foo~%x~%#else~%y~%#endif"              "y~%")
    '("#define foo~%#if defined foo~%x~%#else~%y~%#endif" "x~%")
 
-   '("#ifdef 1~%x~%#endif"                               error)
-   '("#ifdef foo~%x~%else~%y~%#endif"                    "y~%")
-   '("#define foo~%#ifdef foo~%x~%else~%y~%#endif"       "x~%")
+   '("#ifdef foo~%x~%#else~%y~%#endif"                   "y~%")
+   '("#define foo~%#ifdef foo~%x~%#else~%y~%#endif"      "x~%")
 
-   '("#ifndef 1~%x~%#endif"                              error)
-   '("#ifndef foo~%x~%else~%y~%#endif"                   "x~%")
-   '("#define foo~%#ifndef foo~%x~%else~%y~%#endif"      "y~%")))
+   '("#ifndef foo~%x~%#else~%y~%#endif"                  "x~%")
+   '("#define foo~%#ifndef foo~%x~%#else~%y~%#endif"     "y~%")
+
+   ;; More complex cases
+   '("#if bar == 0~%x~%#else~%y~%#endif"                 "x~%")
+   '("#if bar == 1~%x~%#else~%y~%#endif"                 "y~%")
+   '("#if bar < 0~%x~%#else~%y~%#endif"                  "y~%")
+   '("#if bar < 1~%x~%#else~%y~%#endif"                  "x~%")
+   '("#if !(defined FOO) && (BAR < 10)~%x~%#endif"       "x~%")))
 
 (test include.smoke
   "Smoke test for the evaluation of `include' nodes."
@@ -103,7 +107,6 @@
   "Unsorted tests"
 
   (eval-cases
-   '("\"foo\"" "\"foo\"~%")
    '("#define foo(x) x~%foo(1~%" error)
    '("#define foo(x,y) x + y~%baz foo(foo(1,2),foo(3,4)"
      error)
@@ -125,7 +128,4 @@
       #define foo2(x,y) x + y~@
       #define bar foo2(3,4)~@
       baz foo(foo(1,2),bar)"
-     "baz 1+2+3+4~%")
-
-   '("'foo'"
-     "'foo'~%")))
+     "baz 1+2+3+4~%")))

@@ -1,6 +1,6 @@
 ;;;; environment.lisp --- Environment for evaluating C expressions.
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -204,37 +204,38 @@
 ;;; An environment with special evaluation rules for evaluating the
 ;;; test of an `if' node.
 
+(#+sbcl sb-ext:defglobal #-sbcl defvar **test-true**
+  (list (make-instance 'model:number* :value "1")))
+
+(#+sbcl sb-ext:defglobal #-sbcl defvar **test-false**
+  (list (make-instance 'model:number* :value "0")))
+
 (defclass test-environment (child-environment-mixin)
   ())
 
 (defmethod evaluate ((element     model:identifier)
                      (remainder   t)
                      (environment test-environment))
-  (if (string= (model:name element) "defined")
-      (destructuring-bind (first &rest rest) remainder
-        (cond ((not (typep first 'model:identifier))
-               (error "Argument of defined operator must be an identifier"))
-              ((lookup (model:name first) environment)
-               (values (load-time-value (list (make-instance 'model:number* :value "1")))
-                       rest))
-              (t
-               (values (load-time-value (list (make-instance 'model:number* :value "0")))
-                       rest))))
-      (call-next-method)))
-
-(defmethod evaluate ((macro       null)
-                     (remainder   t)
-                     (environment test-environment))
-  (values (load-time-value (list (make-instance 'model:number* :value "0")))
-          remainder))
+  (let ((name (model:name element)))
+    (cond ((string= name "defined")
+           (destructuring-bind (first &rest rest) remainder
+             (cond ((not (typep first 'model:identifier))
+                    (error "Argument of defined operator must be an identifier"))
+                   ((lookup (model:name first) environment)
+                    (values **test-true** rest))
+                   (t
+                    (values **test-false** rest)))))
+          ((not (lookup name environment))
+           (values **test-false** remainder))
+          (t
+           (call-next-method)))))
 
 (defmethod evaluate ((element     empty-macro)
                      (remainder   t)
                      (environment test-environment))
-  (values (load-time-value (list (make-instance 'model:number* :value "1")))
-          remainder))
+  (values **test-true** remainder))
 
-(defmethod evaluate ((name        t)
-                         (macro       object-like-macro)
-                         (environment test-environment))
-  (replacement macro))
+(defmethod evaluate ((element     t)
+                     (remainder   object-like-macro)
+                     (environment test-environment))
+  (replacement remainder))

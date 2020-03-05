@@ -1,6 +1,6 @@
 ;;;; package.lisp --- Package definition for the preprocessor.evaluator module.
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -32,4 +32,6 @@
 
   ;; Evaluation protocol
   (:export
-   #:evaluate))
+   #:evaluate
+   #:output
+   #:evaluate-to-string))

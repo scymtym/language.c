@@ -1,6 +1,6 @@
 ;;;; protocol.lisp --- Protocol provided by the preprocessor.evaluator module.
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -35,6 +35,9 @@
       (error "~@<Could not resolve ~A include ~S.~@:>" kind name)))
 
 ;;; Evaluation protocol
+;;;
+;;; Allows evaluating abstract syntax trees to a form that can be
+;;; rendered as text.
 
 ;; TODO rename first parameter to node?
 (defgeneric evaluate (element remainder environment)
@@ -88,10 +91,12 @@ TARGET is usually a stream."))
   (write-char element target))
 
 (defmethod output ((element list) (target stream))
+  ;; Write elements of ELEMENT to TARGET. Insert a space between
+  ;; adjacent elements if both are either an identifier or a number.
   (loop :for previous = nil :then token
         :for token :in element
         :when (and previous
-                   (typep previous '(or model::identifier model::number*))
-                   (typep token '(or model::identifier model::number*)))
+                   (typep previous '(or model:identifier model::number*))
+                   (typep token '(or model:identifier model::number*)))
         :do (write-char #\Space target)
         :do (output token target)))

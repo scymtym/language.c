@@ -41,8 +41,8 @@
       (values '() (append expansion remainder) (cons element (lastcar expansion))))
     (values (list element) remainder)))
 
-(defmethod output ((token model::header-name) (target stream))
-  (multiple-value-bind (open close)
+(defmethod output ((token model:header-name) (target stream))
+  (multiple-value-bind (open close) ; TODO do this in token->string?
       (ecase (model:kind token)
         (:system (values #\< #\>))
         (:local  (values #\" #\")))
@@ -67,33 +67,61 @@
           remainder))
 
 ;;; 6.10.1 Conditional inclusion
-;; TODO #ifdef foo does not work
-(defmethod evaluate ((element     model:if*)
-                     (remainder   t)
-                     (environment t))
+
+(defun evaluate-test/if (element environment)
   (let* ((test-expression
            (evaluate-to-string (model:test element)
                                (make-instance 'test-environment :parent environment)))
          (test-ast
            (architecture.builder-protocol:with-builder ('list)
              (language.c.preprocessor.parser::%parse
-              'language.c.shared.parser::constant-expression (string-trim '(#\Space) test-expression))))) ; TODO do this without trimming
+              'language.c.shared.parser:constant-expression (string-trim '(#\Space) test-expression))))) ; TODO do this without trimming
+    (eval-constant-expression test-ast)))
+
+(defun evaluate-test/ifdef (element environment kind)
+  (let* ((name     (model:name (aref (model:test element) 0))) ; TODO make this robust
+         (defined? (lookup name environment)))
+    (ecase kind
+      (:ifdef  defined?)
+      (:ifndef (not defined?)))))
+
+(defmethod evaluate ((element     model:if*)
+                     (remainder   t)
+                     (environment t))
+  (let* ((kind      (model:kind element))
+         (result    (ecase kind
+                      (:if
+                       (evaluate-test/if element environment))
+                      ((:ifdef :ifndef)
+                       (evaluate-test/ifdef element environment kind))))
+         (successor (if result
+                        (model:then element)
+                        (model:else element))))
+    (evaluate successor remainder environment))
+
+  #+no (let* ((test-expression
+                (evaluate-to-string (model:test element)
+                                    (make-instance 'test-environment :parent environment)))
+              (test-ast
+                (architecture.builder-protocol:with-builder ('list)
+                  (language.c.preprocessor.parser::%parse
+                   'language.c.shared.parser:constant-expression (string-trim '(#\Space) test-expression))))) ; TODO do this without trimming
                                         ; (evaluate test-ast environment target)
-    (let* ((test-result (eval-constant-expression test-ast))
-           (result      (ecase (model:kind element)
-                          (:if     test-result)
-                          (:ifdef  test-result)
-                          (:ifndef (not test-result))))
-           (successor   (if result
-                            (model:then element)
-                            (model:else element))))
-      (evaluate successor remainder environment))))
+         (let* ((test-result (eval-constant-expression test-ast))
+                (result      (ecase (model:kind element)
+                               (:if     test-result)
+                               (:ifdef  test-result)
+                               (:ifndef (not test-result))))
+                (successor   (if result
+                                 (model:then element)
+                                 (model:else element))))
+           (evaluate successor remainder environment))))
 
 ;;; Control lines
 
 ;;; 6.10.2 Source file inclusion
 (defun evaluate-header-name (nodes environment)
-  (if (typep nodes '(cons model::header-name null)) ; TODO
+  (if (typep nodes '(cons model:header-name null)) ; TODO
       (first nodes)
       (let* ((string (evaluate-to-string nodes environment))
              (ast    (language.c.preprocessor.parser:parse ; TODO make a helper function for this
@@ -202,12 +230,12 @@
 (defmethod evaluate ((element     model:error*)
                      (remainder   t)
                      (environment t))
-  (error "~{~A~^ ~}" (coerce (model::message element) 'list)))
+  (error "~{~A~^ ~}" (coerce (model:message element) 'list)))
 
 (defmethod evaluate ((element     model:pragma)
                      (remainder   t)
                      (environment t))
-  (let* ((first-token  (first-elt (model::tokens element)))
+  (let* ((first-token  (first-elt (model:tokens element)))
          (token-string (model::token-string first-token)))
     (if-let ((which (find-symbol token-string '#:keyword)))
       (evaluate-pragma which element environment)
