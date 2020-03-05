@@ -33,6 +33,14 @@
           :reader  name
           :reader  token-string)))
 
+(defclass character-literal (single-token-mixin
+                             print-items:print-items-mixin)
+  ((%value :initarg :value
+           :reader  value)))
+
+(defmethod token-string ((node character-literal))
+  (format nil "'~A'" (value node)))
+
 ;; TODO rename to number-literal
 (defclass number* (single-token-mixin
                    print-items:print-items-mixin)

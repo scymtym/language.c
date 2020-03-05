@@ -1,6 +1,6 @@
 ;;;; builder.lisp --- A builder for making and relating model elements.
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -36,7 +36,7 @@
                          (kind    (eql :constant))
                          &key type value)
   (ecase type
-    (:char (make-instance 'string-literal :value value)))) ; TODO hack
+    (:char (make-instance 'character-literal :value value))))
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :number))

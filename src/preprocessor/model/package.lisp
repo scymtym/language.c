@@ -1,6 +1,6 @@
 ;;;; package.lisp --- Package definition for the preprocessor.model module.
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -14,6 +14,8 @@
   ;; Lexical elements
   (:export
    #:identifier #:name
+
+   #:character-literal #:value
 
    #:number* #:value
 
