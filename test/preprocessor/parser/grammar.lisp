@@ -1,6 +1,6 @@
 ;;;; grammar.lisp --- Tests for the grammar rules of the preprocessor.parser module
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -18,15 +18,17 @@
 ;;; If
 
 (define-rule-test if-section
-  ("#if foo~%#endif" '(:if
-                       (:test (((:identifier () :name "foo" :bounds (4 . 7)))))
-                       :kind :if :bounds (0 . 14)))
+  ("#ifdef 1~%#endif" nil)
+
+  ("#if foo~%#endif"  '(:if
+                        (:test (((:identifier () :name "foo" :bounds (4 . 7)))))
+                        :kind :if :bounds (0 . 14)))
   ("#ifdef foo~%#define __GLIBC_USE(F) __GLIBC_USE_ ## F~%#else~%bar~%#endif /* foo */~%"
    '(:if
-     (:test (())
+     (:test (((:identifier () :name "foo" :bounds (7 . 10))))
       :then (())
       :else (()))
-     :kind :ifdef :bounds (0 . 120))))
+     :kind :ifdef :bounds (0 . 79))))
 
 (test rule.if-section.2
 

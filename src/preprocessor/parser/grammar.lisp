@@ -1,7 +1,7 @@
 ;;;; grammar.lisp --- Grammar for the C18 preprocessor language
 ;;;;
 ;;;; Copyright (C) 2019 Daniel Kochmański
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Daniel Kochmański
 ;;;;         Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
@@ -17,7 +17,8 @@
 ;;; A.1.1 Lexical elements
 
 (defrule skippable/same-logical-line*
-    (* (or whitespace/same-line (and #\\ #\Newline))))
+    (* (or whitespace/same-line (and #\\ #\Newline)))
+  (:error-report nil))
 
 (deftokens (keyword t :skippable            skippable/same-logical-line*
                       :requires-separation? t)
