@@ -58,11 +58,13 @@
    #+END_SRC
 
    #+RESULTS:
-   : (1<<1)(2<<1)
-   :
-   : 1 bar 2
-   :
-   : 1 4 baz(2)baz 3 1 5 baz(2)baz 3
+   #+begin_example
+     (1<<1)(2<<1)
+
+     1 bar 2
+
+     1 4 baz(2)baz 3 1 5 baz(2)baz 3
+   #+end_example
 
    The other main function is ~parse~:
 
@@ -74,7 +76,7 @@
    #+END_SRC
 
    #+RESULTS:
-   #+begin_example
+   #+begin_src lisp
      (:TRANSLATION-UNIT
       (:DECLARATION
        (((:FUNCTION-DEFINITION
@@ -90,7 +92,7 @@
               (4 . 10)))))
           :BOUNDS (0 . 24)))))
       :BOUNDS (0 . 24))
-   #+end_example
+   #+end_src
 
 ** STARTED The Preprocessor Language
 
@@ -111,7 +113,7 @@
     #+END_SRC
 
     #+RESULTS:
-    #+begin_example
+    #+begin_src lisp
     (:GROUP
      (:PART
       (((:DEFINE-OBJECT-LIKE-MACRO
@@ -124,7 +126,7 @@
      :BOUNDS (0 . 17))
     NIL
     T
-    #+end_example
+    #+end_src
 
     The second argument is a "builder" which controls the construction
     of the parse result (The "builder" concept, related protocols and
@@ -144,9 +146,11 @@
     #+END_SRC
 
     #+RESULTS:
-    : #<LANGUAGE.C.PREPROCESSOR.MODEL:GROUP {10023739B3}>
-    : NIL
-    : T
+    #+begin_example
+      #<LANGUAGE.C.PREPROCESSOR.MODEL:GROUP {10023739B3}>
+      NIL
+      T
+    #+end_example
 
 *** STARTED Evaluating Syntax Trees
 
@@ -167,13 +171,15 @@
     #+END_SRC
 
     #+RESULTS:
-    : 1 bar
-    : baz fez
-    : #<LANGUAGE.C.PREPROCESSOR.EVALUATOR:ENVIRONMENT {101827EEE3}>
-    :   [standard-object]
-    :
-    : Slots with :INSTANCE allocation:
-    :   %ENTRIES                       = #{"foo" :..
+    #+begin_example
+      1 bar
+      baz fez
+      #<LANGUAGE.C.PREPROCESSOR.EVALUATOR:ENVIRONMENT {101827EEE3}>
+        [standard-object]
+
+      Slots with :INSTANCE allocation:
+        %ENTRIES                       = #{"foo" :..
+    #+end_example
 
 ** STARTED The C Language
 
@@ -184,7 +190,7 @@
     #+END_SRC
 
     #+RESULTS:
-    #+begin_example
+    #+begin_src lisp
     (:TRANSLATION-UNIT
      (:DECLARATION
       (((:FUNCTION-DEFINITION
@@ -199,7 +205,7 @@
      :BOUNDS (0 . 21))
     NIL
     T
-    #+end_example
+    #+end_src
 
 *** TODO Evaluating
 
