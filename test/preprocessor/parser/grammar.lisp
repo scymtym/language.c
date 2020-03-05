@@ -12,8 +12,16 @@
 (define-rule-test group
   ("typedef __gnuc_va_list va_list;~%#   define _VA_LIST_DEFINED~%"
    '(:group
-     (:token (((:identifier ))))
-     :bounds (0 .30))))
+     (:part (((:line
+               (:token (((:identifier () :name "typedef"        :bounds ( 0 .  7)))
+                        ((:identifier () :name "__gnuc_va_list" :bounds ( 8 . 22)))
+                        ((:identifier () :name "va_list"        :bounds (23 . 30)))
+                        ((:punctuator () :which :|;|            :bounds (30 . 31)))))
+               :bounds (0 . 32)))
+             ((:define-object-like-macro
+               (:name (((:identifier () :name "_VA_LIST_DEFINED" :bounds (43 . 59)))))
+               :bounds (36 . 59)))))
+     :bounds (0 . 60))))
 
 ;;; If
 
