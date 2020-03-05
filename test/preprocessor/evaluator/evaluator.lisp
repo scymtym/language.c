@@ -1,6 +1,6 @@
 ;;;; evaluator.lisp --- Unit tests for the evaluator.
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -38,7 +38,11 @@
        cases))
 
 (test group.smoke
-  "Smoke test for the evaluation of `group' nodes.")
+  "Smoke test for the evaluation of `group' nodes."
+
+  (eval-cases
+   '("1"    "1~%")
+   '("1~%2" "1~%2~%")))
 
 (test if.smoke
   "Smoke test for the evaluation of `if' nodes."
@@ -54,28 +58,50 @@
 
    '("#if defined 1~%x~%#endif"                          error)
    '("#if defined foo~%x~%#else~%y~%#endif"              "y~%")
-   '("#define foo~%#if defined foo~%x~%#else~%y~%#endif" "x~%")))
+   '("#define foo~%#if defined foo~%x~%#else~%y~%#endif" "x~%")
+
+   '("#ifdef 1~%x~%#endif"                               error)
+   '("#ifdef foo~%x~%else~%y~%#endif"                    "y~%")
+   '("#define foo~%#ifdef foo~%x~%else~%y~%#endif"       "x~%")
+
+   '("#ifndef 1~%x~%#endif"                              error)
+   '("#ifndef foo~%x~%else~%y~%#endif"                   "x~%")
+   '("#define foo~%#ifndef foo~%x~%else~%y~%#endif"      "y~%")))
 
 (test include.smoke
-  "Smoke test for the evaluation of `include' nodes.")
+  "Smoke test for the evaluation of `include' nodes."
+
+  (eval-cases
+   '("#include <does-not-exist>"     error)
+   '("#include \"does-not-exist.h\"" error)))
 
 (test define-object-like-macro.smoke
   "Smoke test for the evaluation of `define-object-like-macro' nodes."
 
   (eval-cases
-   '("#define foo 1~%foo" "1~%")))
+   '("#define foo 1"            "")
+   '("#define foo 1~%foo"       "1~%")
+
+   '("#define foo foo~%foo"     "foo~%")
+   '("#define foo bar~%foo foo" "bar bar~%")))
 
 (test define-function-like-macro.smoke
   "Smoke test for the evaluation of `define-function-like-macro' nodes."
 
   (eval-cases
-   '("#define foo(x) x~%foo(1)" "1~%"))
-  )
+   '("#define foo() x"                                "")
+   '("#define foo(x) x"                               "")
+
+   '("#define foo() x~%foo()"                         "x~%")
+   '("#define foo(x) x~%foo(1)"                       "1~%")
+
+   '("#define foo(x,...) x __VA_ARGS__~%foo(1,2,3,4)" "1 2 3 4~%")))
 
 ;;;
 
 (test unsorted.smoke                    ; TODO obviously
   "Unsorted tests"
+
   (eval-cases
    '("\"foo\"" "\"foo\"~%")
    '("#define foo(x) x~%foo(1~%" error)
@@ -100,22 +126,6 @@
       #define bar foo2(3,4)~@
       baz foo(foo(1,2),bar)"
      "baz 1+2+3+4~%")
-
-   '("#define foo(x) x~@
-     foo(x)"
-     "x~%")
-
-   '("#define foo foo~@
-      foo"
-     "foo~%")
-
-   '("#define foo(x,...) x __VA_ARGS__~@
-      foo(1,2,3,4)"
-     "1 2 3 4~%")
-
-   '("#define foo bar~@
-      foo foo"
-     "bar bar~%")
 
    '("'foo'"
      "'foo'~%")))
