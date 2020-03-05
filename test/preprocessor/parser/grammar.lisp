@@ -26,7 +26,10 @@
 ;;; If
 
 (define-rule-test if-section
-  ("#ifdef 1~%#endif" nil)
+  ("#ifdef 1~%#endif"       nil)
+  ("#ifdef foo.bar~%#endif" nil)
+  ("#ifndef 1~%#endif"      nil)
+
 
   ("#if foo~%#endif"  '(:if
                         (:test (((:identifier () :name "foo" :bounds (4 . 7)))))
@@ -71,8 +74,8 @@ typedef __gnuc_va_list va_list;
 ;;; Control lines
 
 (define-rule-test define-identifier-line
-  ("define"   nil)
-  ("define 1" nil)
+  ("define"         nil)
+  ("define 1"       nil)
 
   ("define foo"
    '(:define-object-like-macro
