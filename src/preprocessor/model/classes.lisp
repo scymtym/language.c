@@ -1,6 +1,6 @@
 ;;;; classes.lisp --- Classes provided by the preprocessor.model module.
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -85,6 +85,7 @@
 
 (defclass if* ()
   ((%kind :initarg  :kind
+          :type     (member :if :ifdef :ifndef)
           :reader   kind)
    ;; Test is currently a collection of tokens. Apparently, we must
    ;; macro-expand those, parse the result as a "constant-expression"
