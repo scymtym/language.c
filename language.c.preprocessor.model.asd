@@ -1,6 +1,6 @@
 ;;;; language.c.preprocessor.model.asd --- System definition for the preprocessor.model module.
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -35,4 +35,5 @@
   :components ()
 
   :perform    (test-op (operation component)
-                (uiop:symbol-call '#:language.c.preprocessor.parser.test '#:run-tests)))
+                ; (uiop:symbol-call '#:language.c.preprocessor.model.test '#:run-tests)
+                       ))
