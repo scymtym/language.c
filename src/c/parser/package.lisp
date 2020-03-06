@@ -1,6 +1,6 @@
 ;;;; package.lisp --- Package definition for the c.parser module
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -21,6 +21,9 @@
    #:character-ranges
    #:? #:&)
 
+  (:import-from #:parser.common-rules
+   #:defrule/s)
+
   (:import-from #:language.c.shared.parser
    #:deftokens
 
@@ -39,7 +42,7 @@
    #:punctuator-[   #:punctuator-]   #:punctuator-|(| #:punctuator-|)|
    #:punctuator-{   #:punctuator-}   #:punctuator-|.| #:punctuator-->
 
-   #:punctuator-++  #:punctuator-&
+   #:punctuator-++  #:punctuator---  #:punctuator-&
    #:punctuator-*   #:punctuator-+   #:punctuator--   #:punctuator-~   #:punctuator-!
 
    #:punctuator-=

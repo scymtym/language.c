@@ -1,6 +1,6 @@
 ;;;; grammar.lisp --- Tests for the grammar rules of the c.parser module
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -9,11 +9,106 @@
 (def-suite* :language.c.c.parser.grammar
   :in :language.c.c.parser)
 
+;;; A.2.1 Expressions
+
+(define-rule-test language.c.c.parser::postfix-expression
+  ;; No suffix
+  ("a"
+   '(:identifier () :name "a" :bounds (0 . 1)))
+  ;; Primary expression with suffix
+  ("a[b]"
+   '(:subscript
+     (:index      (((:identifier () :name "b" :bounds (2 . 3))))
+      :expression (((:identifier () :name "a" :bounds (0 . 1)))))
+     :bounds (0 . 4)))
+  ("a(b,c)"
+   '(:call
+     (:argument (((:identifier () :name "b" :bounds (2 . 3)))
+                 ((:identifier () :name "c" :bounds (4 . 5))))
+      :function (((:identifier () :name "a" :bounds (0 . 1)))))
+     :bounds (0 . 6)))
+  ("a.b"
+   '(:member-access
+     (:member     (((:identifier () :name "b" :bounds (2 . 3))))
+      :expression (((:identifier () :name "a" :bounds (0 . 1)))))
+     :pointer nil :bounds (0 . 3)))
+  ("a->b"
+   '(:member-access
+     (:member     (((:identifier () :name "b" :bounds (3 . 4))))
+      :expression (((:identifier () :name "a" :bounds (0 . 1)))))
+     :pointer t :bounds (0 . 4)))
+  ("a++"
+   '(:unary-operator
+     (:expression (((:identifier () :name "a" :bounds (0 . 1)))))
+     :operator :|++| :position :postfix :bounds (0 . 3)))
+  ("a--"
+   '(:unary-operator
+     (:expression (((:identifier () :name "a" :bounds (0 . 1)))))
+     :operator :|--| :position :postfix :bounds (0 . 3)))
+
+  ;; Type name and initializer with suffix
+  ;; ("(int){a=1}" nil)
+  )
+
+(define-rule-test language.c.c.parser::unary-expression
+  ("a"
+   '(:identifier () :name "a" :bounds (0 . 1)))
+  ("a++"
+   '(:unary-operator
+     (:expression (((:identifier () :name "a" :bounds (0 . 1)))))
+     :operator :|++| :position :postfix :bounds (0 . 3)))
+  ("++a"
+   '(:unary-operator
+     (:operand (((:identifier () :name "a" :bounds (2 . 3)))))
+     :operator :++ :bounds (0 . 3)))
+  ("--a"
+   '(:unary-operator
+     (:operand (((:identifier () :name "a" :bounds (2 . 3)))))
+     :operator :-- :bounds (0 . 3)))
+  ("-a"
+   '(:unary-operator
+     (:operand (((:identifier () :name "a" :bounds (1 . 2)))))
+     :operator :- :bounds (0 . 2)))
+  ("+a"
+   '(:unary-operator
+     (:operand (((:identifier () :name "a" :bounds (1 . 2)))))
+     :operator :+ :bounds (0 . 2)))
+  ("&a"
+   '(:unary-operator
+     (:operand (((:identifier () :name "a" :bounds (1 . 2)))))
+     :operator :& :bounds (0 . 2)))
+  ("sizeof(int)"
+   '(:unary-operator
+     (:operand (((:type-specifier () :which :int :bounds (7 . 10)))))
+     :operator :sizeof :bounds (0 . 11)))
+  ("_Alignof(int)"
+   '(:unary-operator
+     (:operand (((:type-specifier () :which :int :bounds (9 . 12)))))
+     :operator :_alignof :bounds (0 . 13))))
+
 ;;; A.2.2 Declarations
 
 (define-rule-test declaration
   ("int x;"
-   '(:declaration)))
+   '(:declaration))
+  ("typedef int bar;"
+   '(:declaration
+     (:specifier ((:typedef)
+                  ((:type-specifier () :which :int :bounds (8 . 12)))
+                  ((:type-specifier () :which (:identifier nil :name "bar" :bounds (12 . 15))
+                    :bounds (12 . 15)))))
+     :bounds (0 . 16)))
+  ("typedef foo bar;"
+   '(:declaration
+     (:specifier ((:typedef)
+                  ((:type-specifier () :which (:identifier nil :name "foo" :bounds (8 . 11))
+                    :bounds (8 . 12)))
+                  ((:type-specifier () :which (:identifier nil :name "bar" :bounds (12 . 15))
+                    :bounds (12 . 15)))))
+     :bounds (0 . 16)))
+
+  ("typedef struct{int __val[2];} foo;" nil)
+  ("typedef struct _IO_FILE __FILE;" nil))
 
 (define-rule-test enum-specifier
   ("enum"    nil)
