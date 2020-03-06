@@ -231,13 +231,22 @@
                      (environment test-environment))
   (let ((name (model:name element)))
     (cond ((string= name "defined")
-           (destructuring-bind (first &rest rest) remainder
-             (cond ((not (typep first 'model:identifier))
+           (destructuring-bind (first &optional second third &rest rest)
+               remainder
+             (cond ((and (typep first 'model::punctuator)
+                         (eq (model::which first) :|(|)
+                         (eq (model::which third) :|)|))
+                    (values (if (lookup (model:name second) environment)
+                                **test-true**
+                                **test-false**)
+                            rest))
+                   ((not (typep first 'model:identifier))
                     (error "Argument of defined operator must be an identifier"))
-                   ((lookup (model:name first) environment)
-                    (values **test-true** rest))
                    (t
-                    (values **test-false** rest)))))
+                    (values (if (lookup (model:name first) environment)
+                                **test-true**
+                                **test-false**)
+                            (rest remainder))))))
           ((not (lookup name environment))
            (values **test-false** remainder))
           (t

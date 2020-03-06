@@ -57,6 +57,7 @@
 
    '("#if defined 1~%x~%#endif"                          error)
    '("#if defined foo~%x~%#else~%y~%#endif"              "y~%")
+   '("#if defined(foo)~%x~%#else~%y~%#endif"             "y~%")
    '("#define foo~%#if defined foo~%x~%#else~%y~%#endif" "x~%")
 
    '("#ifdef foo~%x~%#else~%y~%#endif"                   "y~%")
