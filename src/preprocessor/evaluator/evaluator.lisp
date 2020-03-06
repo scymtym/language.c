@@ -62,15 +62,27 @@
 (defmethod evaluate ((element     model:line)
                      (remainder   t)
                      (environment t))
-  (multiple-value-bind (result remainder) (evaluate (model:tokens element) '() environment)
-    (values (append result (list #\Newline)) remainder)))
+  (let ((new-remainder (list* (make-instance 'model::punctuator :which #\Newline) remainder)))
+    (evaluate (model:tokens element) new-remainder environment))
+  #+old (multiple-value-bind (result remainder) (evaluate (model:tokens element) '() environment)
+          (values (append result (list #\Newline)) remainder)))
 
 ;;; Group
 
 (defmethod evaluate ((element     model:group)
                      (remainder   t)
                      (environment t))
-  (values (mapcan (rcurry #'evaluate '() environment) (coerce (model:parts element) 'list)) ; TODO coerce
+  (let ((flat (mappend (lambda (part)
+                         (typecase part
+                           (model:line
+                            (append (coerce (model:tokens part) 'list)
+                                    (list (make-instance 'model::punctuator :which #\Newline))))
+                           (t
+                            (list part))))
+                       (coerce (model:parts element) 'list))))
+    (evaluate flat remainder environment))
+  #+no (evaluate (coerce (model:parts element) 'list) remainder environment)
+  #+no (values (mapcan (rcurry #'evaluate '() environment) (coerce (model:parts element) 'list)) ; TODO coerce
           remainder))
 
 ;;; 6.10.1 Conditional inclusion

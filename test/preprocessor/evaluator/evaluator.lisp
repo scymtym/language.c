@@ -103,7 +103,10 @@
    '("#define foo(x,...) x __VA_ARGS__~%foo(1,2,3,4)" "1 2 3 4~%")
 
    ;; Nested parentheses in call
-   '("#define foo(x) x~%foo(bar())"                   "bar()~%")))
+   '("#define foo(x) x~%foo(bar())"                   "bar()~%")
+
+   ;; Multi-line macro invocation
+   '("#define foo(x) x~%foo(bar(1,2)~%fez)"           "bar(1,2)~%fez~%")))
 
 ;;;
 
