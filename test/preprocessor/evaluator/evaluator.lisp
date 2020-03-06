@@ -106,7 +106,14 @@
    '("#define foo(x) x~%foo(bar())"                   "bar()~%")
 
    ;; Multi-line macro invocation
-   '("#define foo(x) x~%foo(bar(1,2)~%fez)"           "bar(1,2)~%fez~%")))
+   '("#define foo(x) x~%foo(bar(1,2)~%fez)"           "bar(1,2)~%fez~%")
+
+   ;; # operator
+   '("#define foo(x) #x~%foo(bar)"                    "\"bar\"~%")
+   '("#define foo(x) #x~%foo(bar bar2)"               "\"bar bar2\"~%")
+
+   ;; ## operator
+   '("#define foo(x) x##x~%foo(bar)"                  "barbar~%")))
 
 ;;;
 

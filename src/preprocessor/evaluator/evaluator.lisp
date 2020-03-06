@@ -244,6 +244,28 @@
                         (expansion   (evaluate replacement '() environment)))
                    (return (values expansion new-remainder)))))
 
+(defmethod evaluate ((element     model::punctuator)
+                     (remainder   t)
+                     (environment t))
+  (case (model::which element)
+    (:|#|  (destructuring-bind (&optional first &rest rest) remainder
+             (cond ((not first)
+                    (error "identifier must follow #"))
+                   ((not (typep first 'model:identifier))
+                    (error "identifier must follow #"))
+                   (t
+                    (let* ((name   (model:name first))
+                           (macro  (lookup name environment))
+                           (string (evaluate-to-string macro (make-instance 'environment))))
+                      (values (list (make-instance 'model::string-literal
+                                                   :value string))
+                              rest))))))
+    (:|##| (values '(:join) remainder))
+    (t     (call-next-method))))
+
+(defmethod evaluate ((element (eql :join)) (remainder t) (environment t))
+  (values '(:join) remainder))
+
 ;;; 6.10.5, 6.10.6 Directives
 
 (defmethod evaluate ((element     model:error*)
