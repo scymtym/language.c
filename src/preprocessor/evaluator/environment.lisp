@@ -56,9 +56,9 @@
   ((%search-path :initarg :search-path
                  :reader  search-path)))
 
-(defmethod resolve-include ((environment environment)
-                            (kind        (eql :system))
-                            (name        string))
+(defmethod resolve-include ((kind        (eql :system))
+                            (name        string)
+                            (environment environment))
 
   (or (some (lambda (entry)
               (probe-file (merge-pathnames name entry)))

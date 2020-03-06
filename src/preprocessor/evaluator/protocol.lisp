@@ -30,7 +30,7 @@
 (defmethod resolve-include ((kind t) (name t) (environment t))
   nil)
 
-(defmethod resolve-include :around ( (kind t) (name t) (environment t))
+(defmethod resolve-include :around ((kind t) (name t) (environment t))
   (or (call-next-method)
       (error "~@<Could not resolve ~A include ~S.~@:>" kind name)))
 
@@ -72,8 +72,8 @@ TARGET is usually a stream."))
   (unless (and (emptyp element) (emptyp remainder))
     (values (loop :with (first . rest) = (append (coerce element 'list) (coerce remainder 'list)) ; TODO slow
                   :with suppressed     = '()
-                  :for r = rest :then (rest new-remainder)
                   :for e = first :then (first new-remainder)
+                  :for r = rest :then (rest new-remainder)
                   :for (value new-remainder new-suppressed)
                      = (if (find e suppressed :test #'identifier= :key #'car)
                            (list (list e) r)

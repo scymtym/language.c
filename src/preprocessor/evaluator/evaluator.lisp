@@ -9,15 +9,31 @@
 
 (cl:in-package #:language.c.preprocessor.evaluator)
 
+;;; Output
+
+(defmethod output ((token model::single-token-mixin) (target stream))
+  (write-string (model::token-string token) target))
+
+(defmethod output ((token model::string-literal) (target stream))
+  (write-char #\" target)
+  (write-string (model::token-string token) target)
+  (write-char #\" target))
+
+(defmethod output ((token model:header-name) (target stream))
+  (multiple-value-bind (open close) ; TODO do this in token->string?
+      (ecase (model:kind token)
+        (:system (values #\< #\>))
+        (:local  (values #\" #\")))
+    (write-char open target)
+    (write-string (model::token-string token) target)
+    (write-char close target)))
+
 ;;; Lexical elements
 
 (defmethod evaluate ((element     model::single-token-mixin)
                      (remainder   t)
                      (environment t))
   (values (list element) remainder))
-
-(defmethod output ((token model::single-token-mixin) (target stream))
-  (write-string (model::token-string token) target))
 
 (defmethod evaluate ((element     model:identifier)
                      (remainder   t)
@@ -40,15 +56,6 @@
         (evaluate macro remainder environment)
       (values '() (append expansion remainder) (cons element (lastcar expansion))))
     (values (list element) remainder)))
-
-(defmethod output ((token model:header-name) (target stream))
-  (multiple-value-bind (open close) ; TODO do this in token->string?
-      (ecase (model:kind token)
-        (:system (values #\< #\>))
-        (:local  (values #\" #\")))
-    (write-char open target)
-    (write-string (model::token-string token) target)
-    (write-char close target)))
 
 ;;;
 
