@@ -1,6 +1,6 @@
 ;;;; protocol.lisp --- Protocol functions provided by the interface module.
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -9,7 +9,12 @@
 (defvar *default-search-path*
   '(#+unix               #P"/usr/include/"
     #+linux              #P"/usr/include/linux/"
-    #+(and linux x86-64) #P"/usr/include/x86_64-linux-gnu/"))
+
+    #+(and linux x86-64) #P"/usr/include/x86_64-linux-gnu/"
+    #+(and linux x86-64) #P"/usr/include/x86_64-linux-gnu/c++/9/"
+
+    #+linux              #P"/usr/include/c++/9/tr1/"
+    #+linux              #P"/usr/include/c++/9/"))
 
 (defun make-environment (source search-path)
   (make-instance 'language.c.preprocessor.evaluator:include-environment
@@ -28,7 +33,7 @@
   (let* ((builder (make-instance 'language.c.preprocessor.model:builder))
          (ast     (language.c.preprocessor.parser:parse source builder))
          (tokens  (language.c.preprocessor.evaluator:evaluate ast '() environment)))
-    (language.c.preprocessor.evaluator::output tokens target)))
+    (language.c.preprocessor.evaluator:output tokens target)))
 
 (defmethod preprocess ((source pathname)
                        &key (target      *standard-output*)
@@ -37,7 +42,7 @@
   (let* ((builder (make-instance 'language.c.preprocessor.model:builder))
          (ast     (language.c.preprocessor.parser:parse source builder))
          (tokens  (language.c.preprocessor.evaluator:evaluate ast '() environment)))
-    (language.c.preprocessor.evaluator::output tokens target)))
+    (language.c.preprocessor.evaluator:output tokens target)))
 
 ;;; Parsing
 
@@ -63,35 +68,47 @@
               (error ()))
             (funcall prompt output-stream :continuation)))
 
-(defun repl (&key (input-stream  *standard-input*)
-                  (output-stream *standard-output*)
-                  (prompt        (lambda (stream which)
-                                   (let ((string (ecase which
-                                                   (:initial      "* ")
-                                                   (:continuation "> "))))
-                                     (write-string string stream)))))
-  (loop :with environment = (make-environment "<repl>" '())
-        :for input        = (read-complete-input input-stream output-stream prompt)
-        :for preprocessed = (with-output-to-string (stream)
-                              (preprocess input :environment environment
-                                                :target      stream))
-        :for output?      = (notevery (lambda (character)
-                                        (member character '(#\Space #\Tab #\Newline)))
-                                      preprocessed)
-        :for ast          = (when output?
-                              (language.c.c.parser:parse preprocessed 'list
-                                                         :rule '(or language.c.c.parser:function-definition
-                                                                    language.c.c.parser::block-item)))
-        :do (when output?
-              (format output-stream "// After preprocessing:~%")
-              (let ((lines (loop :for line :in (split-sequence:split-sequence ; TODO undeclared dependency?
-                                                #\Newline preprocessed :remove-empty-subseqs t)
-                                 :for words = (split-sequence:split-sequence-if
-                                               (alexandria:rcurry #'member '(#\Space #\Tab)) line
-                                               :remove-empty-subseqs t)
-                                 :when words :collect words)))
-                (format output-stream "~@<// ~@;~{'~{~A~^ ~}'~^~@:_~}~:>" lines))
-              (terpri output-stream)
-
-              (princ ast output-stream)
-              (terpri output-stream))))
+(defun repl (&key (input-stream   *standard-input*)
+                  (output-stream  *standard-output*)
+                  (prompt         (lambda (stream which)
+                                    (let ((string (ecase which
+                                                    (:initial      "* ")
+                                                    (:continuation "> "))))
+                                      (write-string string stream))))
+                  (search-path    *default-search-path*)
+                  (handle-errors? t))
+  (let ((environment (add-builtin-macros! (make-environment "<repl>" search-path))))
+    (labels ((print-preprocessed (preprocessed)
+               (format output-stream "// After preprocessing:~%")
+               (let ((lines (loop :for line :in (split-sequence:split-sequence ; TODO undeclared dependency?
+                                                 #\Newline preprocessed :remove-empty-subseqs t)
+                                  :for words = (split-sequence:split-sequence-if
+                                                (alexandria:rcurry #'member '(#\Space #\Tab)) line
+                                                :remove-empty-subseqs t)
+                                  :when words :collect words)))
+                 (format output-stream "~@<// ~@;~{'~{~A~^ ~}'~^~@:_~}~:>" lines))
+               (terpri output-stream))
+             (once ()
+               (let* ((input        (read-complete-input input-stream output-stream prompt))
+                      (preprocessed (with-output-to-string (stream)
+                                      (preprocess input :environment environment
+                                                        :target      stream)))
+                      (output?      (notevery (lambda (character)
+                                                (member character '(#\Space #\Tab #\Newline)))
+                                              preprocessed))
+                      (ast          (when output?
+                                      (print-preprocessed preprocessed)
+                                      (language.c.c.parser:parse
+                                       preprocessed 'list
+                                       #+no #+no :rule '(or language.c.c.parser:function-definition
+                                                  language.c.c.parser::block-item)))))
+                 (when output?
+                   (princ ast output-stream)
+                   (terpri output-stream)))))
+      (loop (with-simple-restart (abandon-input "Abandon the current input.")
+              (handler-bind ((error (lambda (condition)
+                                      (when handle-errors?
+                                        (princ condition output-stream)
+                                        (fresh-line output-stream)
+                                        (invoke-restart 'abandon-input)))))
+                (once)))))))
