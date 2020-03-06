@@ -254,3 +254,9 @@
                             (environment include-environment))
   (let ((current-file (first (include-stack environment))))
     (setf (gethash current-file (included-files environment)) t)))
+
+;;; Non-standard directives
+
+(defmethod evaluate-pragma ((which       (eql :|GCC|))
+                            (element     model:pragma)
+                            (environment include-environment)))
