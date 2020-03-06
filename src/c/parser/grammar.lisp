@@ -236,7 +236,7 @@
         enum-specifier
         typedef-name ; TODO uncomment and figure out how to make function-definition work despite it
         )
-  (:lambda (which &bounds start end)
+  #+no (:lambda (which &bounds start end)
     (bp:node* (:type-specifier :which which :bounds (cons start end)))))
 
 (defrule struct-or-union-specifier
@@ -325,7 +325,8 @@
     (or keyword-|inline| keyword-|_Noreturn|))
 
 (defrule alignment-specifier
-    (and keyword-|_Alignas| punctuator-|(| (or type-name constant-expression) punctuator-|)|))
+    (and keyword-|_Alignas| punctuator-|(| (or type-name constant-expression) punctuator-|)|)
+  (:function third))
 
 (defrule declarator
     (and (? pointer-list) direct-declarator)
@@ -470,8 +471,14 @@
 
 (defrule static_assert-declaration
     (and keyword-|_Static_assert|
-         punctuator-|(| constant-expression punctuator-|,| string-listeral punctuator-|)|
-         punctuator-|;|))
+         punctuator-|(| constant-expression punctuator-|,| string-literal punctuator-|)|
+         punctuator-|;|)
+  (:destructure (keyword open expression comma message close semicolon
+                         &bounds start end)
+    (declare (ignore keyword open comma close semicolon))
+    (bp:node* (:static-assert :bounds (cons start end))
+      (1 :expression expression)
+      (1 :message    message))))
 
 
 ;;; A.2.3 Statements

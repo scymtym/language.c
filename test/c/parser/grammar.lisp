@@ -108,7 +108,13 @@
      :bounds (0 . 16)))
 
   ("typedef struct{int __val[2];} foo;" nil)
-  ("typedef struct _IO_FILE __FILE;" nil))
+  ("typedef struct _IO_FILE __FILE;" nil)
+
+  ("_Static_assert (foo, \"bla\");"
+   '(:static-assert
+     (:message    (((:string-literal () :value "bla" :encoding nil :bounds (21 . 26))))
+      :expression (((:identifier () :name "foo" :bounds (16 . 19)))))
+     :bounds (0 . 28))))
 
 (define-rule-test enum-specifier
   ("enum"    nil)
