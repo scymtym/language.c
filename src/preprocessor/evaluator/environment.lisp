@@ -129,6 +129,8 @@
                       :reader   %call-environment)
    (%state            :accessor state
                       :initform :open-paren)
+   (%paren-depth      :accessor paren-depth
+                      :initform 0)
    (%argument         :accessor %argument
                       :initform '())
    (%parameters       :initarg  :parameters
@@ -168,22 +170,33 @@
                                               :close-paren))))))
     (case (model::which element)
       (:|(|
-       (state-transition :open-paren :argument)
-       (values '() remainder))
+       (cond ((eq (state environment) :argument)
+              (incf (paren-depth environment))
+              (call-next-method))
+             (t
+              (state-transition :open-paren :argument)
+              (values '() remainder))))
       (:|,|
-       (when (eq (state environment) :argument)
-         (flush-argument))
-       (case (state environment)
-         (:comma          (state-transition :comma          :argument))
-         (:comma/ellipsis (state-transition :comma/ellipsis :rest-argument)))
-       (values '() remainder))
+       (cond ((plusp (paren-depth environment))
+              (call-next-method))
+             (t
+              (when (eq (state environment) :argument)
+                (flush-argument))
+              (case (state environment)
+                (:comma          (state-transition :comma          :argument))
+                (:comma/ellipsis (state-transition :comma/ellipsis :rest-argument)))
+              (values '() remainder))))
       (:|)|
-       (flush-argument)
-       (state-transition (if (eq (state environment) :comma/ellipsis)
-                             :comma/ellipsis
-                             :close-paren)
-                         :done)
-       (values '() remainder t))
+       (cond ((plusp (paren-depth environment))
+              (decf (paren-depth environment))
+              (call-next-method))
+             (t
+              (flush-argument)
+              (state-transition (if (eq (state environment) :comma/ellipsis)
+                                    :comma/ellipsis
+                                    :close-paren)
+                                :done)
+              (values '() remainder t))))
       (t
        (call-next-method)))))
 

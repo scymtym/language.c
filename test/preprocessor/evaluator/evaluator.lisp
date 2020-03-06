@@ -99,7 +99,10 @@
    '("#define foo() x~%foo()"                         "x~%")
    '("#define foo(x) x~%foo(1)"                       "1~%")
 
-   '("#define foo(x,...) x __VA_ARGS__~%foo(1,2,3,4)" "1 2 3 4~%")))
+   '("#define foo(x,...) x __VA_ARGS__~%foo(1,2,3,4)" "1 2 3 4~%")
+
+   ;; Nested parentheses in call
+   '("#define foo(x) x~%foo(bar())"                   "bar()~%")))
 
 ;;;
 
