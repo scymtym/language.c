@@ -46,7 +46,7 @@
   (:text t))
 
 (defrule preprocessing-token
-    (and (! keyword-|endif|)
+    (and (! (or keyword-|endif| "//"))
          (or header-name
              identifier
              pp-number
@@ -209,6 +209,7 @@
                             pragma-line
                             (and))
          whitespace/same-line*
+         (? parser.common-rules:c-style-comment/rest-of-line/trimmed)
          new-line)
 
   #+no (and |#| (or

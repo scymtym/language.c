@@ -73,6 +73,13 @@ typedef __gnuc_va_list va_list;
 
 ;;; Control lines
 
+(define-rule-test language.c.preprocessor.parser::include-line
+  ("include <name>//comment"
+   '(:include
+     (:filename (((:header-name () :kind :system :name "name" :bounds (8 . 14)))))
+     :bounds (0 . 14))
+   14))
+
 (define-rule-test define-identifier-line
   ("define"         nil)
   ("define 1"       nil)
