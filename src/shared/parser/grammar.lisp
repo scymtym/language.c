@@ -1,7 +1,7 @@
 ;;;; grammar.lisp --- Grammar for things shared between C18 and the preprocessor language
 ;;;;
 ;;;; Copyright (C) 2019 Daniel Kochmański
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Daniel Kochmański
 ;;;;         Jan Moringen <jmoringe@techfak.uni-bielefeld.de>

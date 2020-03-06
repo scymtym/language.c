@@ -253,6 +253,13 @@
     (declare (ignore comma))
     (list identifiers ellipsis)))
 
+(defrule macro-replacement-element
+    (or (and pp-token language.c.shared.parser::punctuator-|##| pp-token)
+        (and punctuator-|#| pp-token)
+        pp-token))
+
+(parse "whoo foo ## bar fez # doo" 'list :rule '(* macro-replacement-element))
+
 (define-control-line-rule undef-line keyword-|undef|
     (and identifier)
   ((name)
