@@ -246,7 +246,7 @@
          (token-string (model::token-string first-token)))
     (if-let ((which (find-symbol token-string '#:keyword)))
       (evaluate-pragma which element environment)
-      (cerror "Ignore the directive" "Unknown directive ~A" token-string)))
+      (cerror "Ignore the directive." "Unknown directive ~A" token-string)))
   (values '() remainder))
 
 (defmethod evaluate-pragma ((which       (eql :|once|))
