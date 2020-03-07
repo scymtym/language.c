@@ -59,6 +59,34 @@
                          &key ((:kind kind*)) name)
   (make-instance 'header-name :kind kind* :name name))
 
+;;; Stringification and concatenation operators
+
+(defmethod bp:make-node ((builder builder)
+                         (kind    (eql :stringification))
+                         &key)
+  (make-instance 'stringification))
+
+(defmethod bp:relate ((builder  builder)
+                      (relation (eql :parameter))
+                      (left     stringification)
+                      (right    identifier)
+                      &key)
+  (reinitialize-instance left :parameter right))
+
+(defmethod bp:make-node ((builder builder)
+                         (kind    (eql :concatenation))
+                         &key)
+  (make-instance 'concatenation))
+
+(defmethod bp:relate ((builder  builder)
+                      (relation (eql :operand))
+                      (left     concatenation)
+                      (right    t)
+                      &key)
+  (if (slot-boundp left '%left)
+      (reinitialize-instance left :right right)
+      (reinitialize-instance left :left  right)))
+
 ;;; Line
 
 (defmethod bp:make-node ((builder builder)

@@ -244,7 +244,7 @@
                         (expansion   (evaluate replacement '() environment)))
                    (return (values expansion new-remainder)))))
 
-(defmethod evaluate ((element     model::punctuator)
+#+no (defmethod evaluate ((element     model::punctuator)
                      (remainder   t)
                      (environment t))
   (case (model::which element)
@@ -263,8 +263,40 @@
     (:|##| (values '(:join) remainder))
     (t     (call-next-method))))
 
-(defmethod evaluate ((element (eql :join)) (remainder t) (environment t))
+#+no (defmethod evaluate ((element (eql :join)) (remainder t) (environment t))
   (values '(:join) remainder))
+
+(defmethod evaluate ((element     model::stringification)
+                     (remainder   t)
+                     (environment t))
+  (let* ((parameter (model::parameter element))
+         ; (string    (evaluate-to-string (list parameter) environment))
+         (name      (model:name parameter))
+         (macro     (lookup name environment))
+         (string    (evaluate-to-string macro (make-instance 'environment)))
+         ) ; TODO do not cons an environment
+    (clouseau:inspect (list parameter macro environment string remainder))
+    (values (list (make-instance 'model::string-literal :value string))
+            remainder)))
+
+(defmethod evaluate ((element     model::concatenation)
+                     (remainder   t)
+                     (environment t))
+  (let* ((left   (multiple-value-bind (result remainder)
+                     (evaluate (list (model::left element)) () environment)
+                   (append result remainder)))
+         (right  (multiple-value-bind (result remainder)
+                     (evaluate (list (model::right element)) () environment)
+                   (append result remainder)))
+         (string (with-output-to-string (stream)
+                   (output (lastcar left) stream)
+                   (output (first right)  stream))))
+    (values ()
+            (append (list (butlast left))
+                    (list (make-instance 'model::identifier :name string))
+                    (rest right)
+                    remainder)          ; TODO make a class
+            )))
 
 ;;; 6.10.5, 6.10.6 Directives
 

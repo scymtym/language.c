@@ -106,14 +106,39 @@
    '("#define foo(x) x~%foo(bar())"                   "bar()~%")
 
    ;; Multi-line macro invocation
-   '("#define foo(x) x~%foo(bar(1,2)~%fez)"           "bar(1,2)~%fez~%")
+   '("#define foo(x) x~%foo(bar(1,2)~%fez)"           "bar(1,2)~%fez~%")))
 
-   ;; # operator
-   '("#define foo(x) #x~%foo(bar)"                    "\"bar\"~%")
-   '("#define foo(x) #x~%foo(bar bar2)"               "\"bar bar2\"~%")
+(test stringification.smoke
+  "Smoke test for the # stringification operator."
 
-   ;; ## operator
-   '("#define foo(x) x##x~%foo(bar)"                  "barbar~%")))
+  (eval-cases
+   ; '("#define foo(x) #x~%foo(bar)"                  "\"bar\"~%")
+   ; '("#define foo(x) #x~%foo(bar baz)"              "\"bar baz\"~%")
+   ; '("#define foo(x) #x~%foo(1 2 3)"                "\"1 2 3\"~%")
+   '("#define foo bar~%#define baz(x) #x~%baz(foo)" "\"foo\"~%")
+   ))
+
+(test concatenation.smoke
+  "Smoke test for the ## concatenation operator."
+
+  (eval-cases
+   '("#define foo(x) x##x~%foo(bar)"         "barbar~%")
+   '("#define foo(x, y) x##y~%foo(bar, baz)" "barbaz~%")
+   '("#define foo(x, y) 1##y~%foo(a, b)"     "1b~%")
+
+   ;; Reparsing
+   '("#define foo(x) x~@
+      #define bar(x, y) x##y(fez)~@
+      bar(f, oo)"
+                                             "fez~%")
+   '("#define foo(x) x~@
+      #define bar(y, z) y##z(baz)~@
+      bar(fez f, oo)"
+                                             "fez baz~%")
+   '("#define foo(x) #x~@
+      #define bar(x, y) x##y(1 2 3)~@
+      bar(f, oo)"
+                                             "\"1 2 3\"~%")))
 
 ;;;
 
@@ -124,6 +149,11 @@
    '("#define foo(x) x~%foo(1~%" error)
    '("#define foo(x,y) x + y~%baz foo(foo(1,2),foo(3,4)"
      error)
+
+   '("#define foo~@
+      foo~@
+      foo"
+     "~%~%")
 
    '("#define foo 1, 2~@
       #define bar(x,y) x+y~@

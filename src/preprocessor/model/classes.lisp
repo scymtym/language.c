@@ -77,17 +77,27 @@
 (defmethod print-items:print-items append ((object header-name))
   `((:kind ,(kind object) "~A " ((:before :token-string)))))
 
-;;;
+;;; Stringification and concatenation operators
 
-(defclass group ()
-  ((%parts :reader   parts
-           :initform (make-array 1 :adjustable t :fill-pointer 0))))
+(defclass stringification ()
+  ((%parameter :initarg :parameter
+               :reader  parameter)))
 
-;;;
+(defclass concatenation ()
+  ((%left  :initarg :left
+           :reader  left)
+   (%right :initarg :right
+           :reader  right)))
+
+;;; Line and group
 
 (defclass line ()
   ((%tokens :reader   tokens
             :initform (make-array 1 :adjustable t :fill-pointer 0))))
+
+(defclass group ()
+  ((%parts :reader   parts
+           :initform (make-array 1 :adjustable t :fill-pointer 0))))
 
 ;;;
 
