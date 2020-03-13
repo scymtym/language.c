@@ -258,13 +258,6 @@
         stringification-operator
         pp-token))
 
-(defrule concatenation-operator
-    (and pp-token language.c.shared.parser::punctuator-|##| pp-token)
-  (:destructure (left operator right &bounds start end)
-    (bp:node* (:concatenation :bounds (cons start end))
-      (1 :operand left)
-      (1 :operand right))))
-
 (defrule stringification-operator
     (and punctuator-|#| identifier)
   (:function second)
@@ -272,7 +265,13 @@
     (bp:node* (:stringification :bounds (cons start end))
       (1 :parameter operand))))
 
-(parse "whoo foo ## bar fez # doo" 'list :rule '(* macro-replacement-element))
+(defrule concatenation-operator
+    (and pp-token punctuator-|##| pp-token)
+  (:destructure (left operator right &bounds start end)
+    (declare (ignore operator))
+    (bp:node* (:concatenation :bounds (cons start end))
+      (1 :operand left)
+      (1 :operand right))))
 
 (define-control-line-rule undef-line keyword-|undef|
     (and identifier)

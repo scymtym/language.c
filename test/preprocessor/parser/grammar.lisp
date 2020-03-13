@@ -119,6 +119,15 @@ typedef __gnuc_va_list va_list;
       :name      (((:identifier () :name "foo" :bounds (7 . 10)))))
      :ellipsis? t :bounds (0 . 17))))
 
+(define-rule-test language.c.preprocessor.parser::macro-replacement-element
+  ("foo"
+   '(:identifier () :name "foo" :bounds (0 . 2)))
+  ("# foo"
+   '(:stringification
+     :parameter (((:identifier () :name "foo" :bounds (2 . 5))))
+     :bounds (0 . 5)))
+  ("foo ## bar " 'list :rule '(* macro-replacement-element)))
+
 ;;;
 
 (define-rule-test constant-expression

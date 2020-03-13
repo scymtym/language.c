@@ -1,6 +1,6 @@
 ;;;; package.lisp --- Package definition for the preprocessor.parser module
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -37,7 +37,7 @@
 
    #:punctuator-|...|
 
-   #:punctuator-|,| #:punctuator-# ; TODO why is this shared?
+   #:punctuator-|,| #:punctuator-# #:punctuator-## ; TODO why is this shared?
 
    #:identifier-list
    #:identifier
