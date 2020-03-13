@@ -441,6 +441,14 @@
 (defrule type-qualifier-list ; TODO remove this rule?
     (+ type-qualifier))
 
+(defrule parameter-type-list/maybe-empty
+    (or parameter-type-list
+        parameter-type-list/empty))
+
+(defrule parameter-type-list/empty
+    (and punctuator-|(| punctuator-|)|)
+  (:constant '()))
+
 (define-bracket-rule parameter-type-list (punctuator-|(| punctuator-|)|)
     (or (and parameter-list punctuator-|,| punctuator-|...|)
         parameter-list))
@@ -478,8 +486,7 @@
     (or (and punctuator-|(| abstract-declarator punctuator-|)|)
         (and (? direct-abstract-declarator)
              (or direct-abstract-declarator/bracket
-                 parameter-type-list
-                 (and punctuator-|(| punctuator-|)|)))))
+                 parameter-type-list/maybe-empty))))
 
 (defrule direct-abstract-declarator/bracket
     (and punctuator-[
@@ -702,7 +709,7 @@
     (and (* (or keyword-|extern| keyword-|static| function-specifier)) ; TODO as nodes?
          (? type-specifier)
          ;; declaration-specifiers
-         non-keyword-identifier #+was declarator parameter-type-list #+was (* declaration) block-items)
+         non-keyword-identifier #+was declarator parameter-type-list/maybe-empty #+was (* declaration) block-items)
   (:destructure (specifiers type declarator #+no (pointer (name parameters)) declarations body
                  &bounds start end)
     (bp:node* (:function-definition :specifiers specifiers

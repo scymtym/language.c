@@ -249,6 +249,13 @@
 
 ;; TODO integrate
 #+TODO (progn
+
+  ("typedef int fp(void);"
+   '(:function-definition))
+
+  ("int(*fp)(void);"
+   '(:function-definition))
+
   (parse "int i =10;" 'list :rule 'declaration)
 
   (parse "struct timeval
@@ -370,22 +377,41 @@ __suseconds_t tv_usec;};" 'list
 (define-rule-test function-definition
   ("int f() {}"
    '(:function-definition
-     (:return    ((:int))
-      :name      (((:identifier () :name "f" :bounds (4 . 5)))))
-     :bounds (0 . 10)))
-
-  ("typedef int fp(void);"
-   '(:function-definition))
-
-  ("int(*fp)(void);"
-   '(:function-definition))
+     (:return (((:primitive-type
+                 ()
+                 :which (nil (nil :int)) :bounds (0 . 4))))
+      :name   (((:identifier () :name "f" :bounds (4 . 5)))))
+     :specifiers ()
+     :bounds     (0 . 10)))
 
   ("int~@
     a~@
     (~@
     /*foo */~@
     int x) { return 1; }"
-   '(:function-definition))
+   '(:function-definition
+     (:body      (((:return-statement
+                    (:value (((:constant
+                               ()
+                               :type      :integer
+                               :value     1
+                               :size      nil
+                               :unsigned? nil
+                               :bounds    (33 . 34)))))
+                    :bounds (26 . 34))))
+      :parameter (((:parameter-declaration
+                    ()
+                    :bounds (17 . 22))))
+      :return    (((:primitive-type
+                    ()
+                    :which (nil (nil :int)) :bounds (0 . 4))))
+      :name      (((:identifier () :name "a" :bounds (4 . 5)))))
+     :specifiers ()
+     :bounds     (0 . 37)))
 
-  ("int *const*foo(int x) {}"
-   '(:function-definition)))
+  #+no ("int *const*foo(int x) {}"
+   '(:function-definition
+     (:body ()
+      :return
+      :name   (((:identifier () :name "foo" :bounds (10 . 12)))))
+     :bounds )))
