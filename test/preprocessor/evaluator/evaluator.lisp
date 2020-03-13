@@ -131,9 +131,6 @@
    '("#define foo(x) #x~%foo(1 2 3)"                "\"1 2 3\"~%")
    '("#define foo bar~%#define baz(x) #x~%baz(foo)" "\"foo\"~%")
    ))
-(language.c.interface:preprocess "#define foo 1, 2
-#define bar(x,y) x+y
-bar(foo,3)")
 
 (test concatenation.smoke
   "Smoke test for the ## concatenation operator."
