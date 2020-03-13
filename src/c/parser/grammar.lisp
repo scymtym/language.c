@@ -178,17 +178,69 @@
 
 
 ;;; A.2.2 Declarations
+;;;
+;;; We deviate from the standard by defining distinct rules for the
+;;; various kinds of declarations instead of allowing all possible
+;;; combinations of specifiers and declarators and letting a later
+;;; stage sort it out.
 
 (defrule declaration
-    (or declaration//
+    (or type-declaration
+        enum-declaration
+        struct-or-union-declaration
+        function-declaration
+        variable-declaration
+        declaration//
         static_assert-declaration))
+
+;; TODO make a macro
+(defrule type-declaration
+    (and keyword-|typedef|
+         ; TODO things like volatile
+         (and type-specifier/?s (? init-declarator-list))
+         punctuator-|;|)
+  (:function second)
+  (:destructure (type declarators &bounds start end)
+    (bp:node* (:type-declaration :bounds (cons start end))
+      (1 :type       type)
+      (* :declarator declarators))))
+
+(defrule enum-declaration
+    (and enum-specifier punctuator-|;|)
+  (:function first))
+
+(defrule struct-or-union-declaration
+    (and struct-or-union-specifier punctuator-|;|)
+  (:function first))
+
+(defrule function-declaration
+    (and (? (or keyword-|extern| keyword-|static| function-specifier))
+         (? type-specifier)
+         direct-declarator
+         punctuator-|;|)
+  (:destructure (specifiers type declarator semicolon &bounds start end)
+    (declare (ignore semicolon))
+    (bp:node* (:function-declaration :specifiers specifiers
+                                     :bounds     (cons start end))
+      ; (bp:? :specifier  specifiers)
+      (bp:? :type       type)
+      (1    :declarator declarator))))
+
+(defrule variable-declaration
+    (and type-specifier/?s init-declarator-list punctuator-|;|)
+  (:destructure (type declarators semicolon &bounds start end)
+    (declare (ignore semicolon))
+    (bp:node* (:variable-declaration :bounds (cons start end))
+      (1 :type       type)
+      (* :declarator declarators))))
 
 (defrule declaration//
     (and declaration-specifiers/?s (? init-declarator-list) punctuator-|;|)
   (:destructure (specifiers inits semicolon &bounds start end)
     (declare (ignore semicolon))
-    (bp:node* (:declaration :bounds (cons start end))
-      (* :specifier specifiers)
+    (bp:node* (:declaration :specifiers specifiers
+                            :bounds     (cons start end))
+      ; (* :specifier specifiers)
       (* :init      inits))))
 
 (defrule/s (declaration-specifiers :s? nil :skippable?-expression whitespace*)
@@ -515,7 +567,7 @@
 (defrule compound-statement
     block-items
   (:lambda (items &bounds start end)
-    (bp:node* (:compound-statement :source (cons start end))
+    (bp:node* (:compound-statement :bounds (cons start end))
       (* :item items))))
 
 (define-bracket-rule block-items (punctuator-{ punctuator-})
@@ -647,13 +699,19 @@
         declaration))
 
 (defrule function-definition
-    (and declaration-specifiers declarator (* declaration) compound-statement)
-  (:destructure (specifiers declarator #+no (pointer (name parameters)) declarations body
+    (and (* (or keyword-|extern| keyword-|static| function-specifier)) ; TODO as nodes?
+         (? type-specifier)
+         ;; declaration-specifiers
+         non-keyword-identifier #+was declarator parameter-type-list #+was (* declaration) block-items)
+  (:destructure (specifiers type declarator #+no (pointer (name parameters)) declarations body
                  &bounds start end)
-    (bp:node* (:function-definition :bounds (cons start end))
-      (1 :declarator declarator)
-      ;; (1 :name        name)
-      (* :return      specifiers)
+    (bp:node* (:function-definition :specifiers specifiers
+                                    :bounds     (cons start end))
+      ;; (1 :declarator declarator)
+      (1    :name        declarator)
+      ; (*    :specifier   specifiers)
+      (bp:? :return      type)
       ;; (* :parameter   parameters)
-      (* :declaration declarations)
-      (* :body        body))))
+      ;; (*    :declaration declarations)
+      (* :parameter      declarations)
+      (*    :body        body))))
