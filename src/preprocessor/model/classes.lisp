@@ -123,10 +123,16 @@
 
 ;;; Control lines
 
-(defclass include ()
+(defclass include-base ()
   ((%filename :initarg  :filename
               :reader   filename
               :initform (make-array 1 :adjustable t :fill-pointer 0))))
+
+(defclass include (include-base)
+  ())
+
+(defclass include-next (include-base)
+  ())
 
 (defclass define ()
   ((%name        :initarg  :name ; TODO is the name expanded first? otherwise make a name-mixin

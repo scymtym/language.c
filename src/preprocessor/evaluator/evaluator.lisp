@@ -155,22 +155,26 @@
                       :rule 'language.c.preprocessor.parser::header-name)))
         ast)))
 
-(defmethod evaluate ((element     model:include)
+(defmethod evaluate ((element     model::include-base)
                      (remainder   t)
                      (environment environment))
   (let* ((header-name (evaluate-header-name
                        (coerce (model:filename element) 'list) environment)) ; TODO without coerce
-         (kind        (model:kind header-name))
+         (kind        (cond ((typep element 'model::include-next)
+                             :system/next)
+                            (t
+                             (model:kind header-name))))
          (name        (model:name header-name))
          (result      '()))
     (tagbody
      :retry
        (restart-case
-           (let* ((filename (resolve-include kind name environment))
+           (let* ((resolved (resolve-include kind name environment))
+                  (filename (file resolved))
                   (content  (include filename environment)))
-             ; (format t "// Including ~A~%" filename)
+             (format *trace-output* "// Including ~A~%" filename)
              (unless (eq content t)
-               (push-file filename environment)
+               (push-file resolved environment)
                (unwind-protect
                     (let ((ast (language.c.preprocessor.parser:parse
                                 content (make-instance 'model:builder)))) ; TODO reuse builder

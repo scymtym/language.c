@@ -52,18 +52,41 @@
 
 ;;; `search-path-environment'
 
+(defclass resolved-include ()
+  ((%file   :initarg :file
+            :reader  file)
+   (%anchor :initarg :anchor
+            :reader  anchor)))
+
 (defclass search-path-environment (environment)
   ((%search-path :initarg :search-path
                  :reader  search-path)))
 
-(defmethod resolve-include ((kind        (eql :system))
-                            (name        string)
-                            (environment environment))
+(flet ((find-on-search-path (name search-path)
+         (some (lambda (entry)
+                 (when-let* ((candidate (merge-pathnames name entry))
+                             (file      (probe-file candidate)))
+                   (make-instance 'resolved-include :file   file
+                                                    :anchor entry)))
+               search-path)))
 
-  (or (some (lambda (entry)
-              (probe-file (merge-pathnames name entry)))
-            (search-path environment))
-      (call-next-method)))
+  (defmethod resolve-include ((kind        (eql :system))
+                              (name        string)
+                              (environment environment)) ; TODO needs search-path-environment
+
+    (or (find-on-search-path name (search-path environment))
+        (call-next-method)))
+
+  (defmethod resolve-include ((kind        (eql :system/next))
+                              (name        string)
+                              (environment environment)) ; TODO needs include-environment
+    (let* ((previous (find name (include-stack environment)
+                          :test #'equal
+                          :key  (compose #'file-namestring #'file)))
+           (entry    (anchor previous))
+           (rest     (rest (member entry (search-path environment))))) ; TODO can fail
+      (or (find-on-search-path name rest)
+          (call-next-method)))))
 
 ;;; `file-environment'
 
@@ -71,12 +94,15 @@
   ((%file :initarg :file
           :reader  file)))
 
-(defmethod resolve-include ((kind        t)
+(defmethod resolve-include ((kind        (eql :local))
                             (name        string)
                             (environment file-environment))
-  (let ((candidate (merge-pathnames name (file environment))))
-    (or (probe-file candidate)
-        (call-next-method))))
+  (let* ((anchor    (file environment))
+         (candidate (merge-pathnames name (file anchor))))
+    (if-let ((file (probe-file candidate)))
+      (make-instance 'resolved-include :file   file
+                                       :anchor anchor)
+      (call-next-method))))
 
 ;;; `include-environment'
 
@@ -93,7 +119,8 @@
 (defmethod file ((environment include-environment))
   (first (%include-stack environment)))
 
-(defmethod push-file ((file pathname) (environment include-environment))
+(defmethod push-file ((file        resolved-include)
+                      (environment include-environment))
   (push file (%include-stack environment)))
 
 (defmethod pop-file ((environment include-environment))

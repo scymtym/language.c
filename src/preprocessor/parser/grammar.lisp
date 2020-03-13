@@ -26,7 +26,7 @@
   |else| |elif|
   |endif|
 
-  |include|
+  |include| |include_next|
 
   |define| |undef|
 
@@ -203,6 +203,7 @@
 (defrule control-line
     (and (and) #+no (! keyword-|endif|)
          punctuator-|#| (or include-line
+                            include-next-line
                             define-identifier-line
                             undef-line
                             line-line
@@ -218,6 +219,12 @@
     (+ pp-token)
   ((&rest filename)
    (bp:node* (:include :bounds (cons start end))
+     (* :filename filename))))
+
+(define-control-line-rule include-next-line keyword-|include_next|
+    (+ pp-token)
+  ((&rest filename)
+   (bp:node* (:include-next :bounds (cons start end))
      (* :filename filename))))
 
 (define-control-line-rule define-identifier-line keyword-|define| ; TODO lparen stuff not handled?

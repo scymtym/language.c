@@ -159,9 +159,14 @@
                          &key)
   (make-instance 'include))
 
+(defmethod bp:make-node ((builder builder)
+                         (kind    (eql :include-next))
+                         &key)
+  (make-instance 'include-next))
+
 (defmethod bp:relate ((builder builder)
                       (relation (eql :filename))
-                      (left     include)
+                      (left     include-base)
                       (right    t)
                       &key)
   (vector-push-extend right (filename left))
