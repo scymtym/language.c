@@ -293,6 +293,11 @@
         keyword-|auto|
         keyword-|register|))
 
+;;; We deviate from the (6.7.2) type-specifier rule in standard which
+;;; is used in (6.7) declaration-specifiers to collect a "bag" of
+;;; specifiers so that later stages have to detect invalid
+;;; combinations. We use a `primitive-type' rule that only accepts
+;;; valid combinations.
 (defrule/s (type-specifier :s? nil :skippable?-expression whitespace*)
     (or primitive-type
         atomic-type-specifier
@@ -304,19 +309,91 @@
          (bp:node* (:type-specifier :which which :bounds (cons start end)))))
 
 (defrule primitive-type
-    (or keyword-|void|
-        (and (? keyword-|long|) keyword-|double|)
-        (and (? (or keyword-|signed|
-                    keyword-|unsigned|)) ; TODO long signed int
-             (or (and (or keyword-|short|
-                          (and keyword-|long| (? keyword-|long|)))
-                      (? keyword-|int|))
-                 (and (and)                               keyword-|int|)
-                 (and (and)                               keyword-|char|)))
-        keyword-|float|
+    (or char-type
+        integer-type
+        double-type
+        complex-type
+        simple-primitive-type))
 
-        keyword-|_Bool|
-        keyword-|_Complex|)
+(defrule sign-type-modifier
+    (or keyword-|signed| keyword-|unsigned|))
+
+(defrule size-type-modifier
+    (or keyword-|short| keyword-|long|))
+
+(defrule char-type
+    (and (? sign-type-modifier) keyword-|char|)
+  (:function first)
+  (:lambda (sign &bounds start end)
+    (bp:node* (:primitive-type :which  :char
+                               :sign   sign
+                               :bounds (cons start end)))))
+
+(defun parse-integer-type-modifiers (text start end)
+  (multiple-value-bind (result position success?)
+      (esrap:parse '(+ (or sign-type-modifier size-type-modifier keyword-|int|))
+                   text :start start :end end :junk-allowed t)
+    (flet ((fail (&optional format-control &rest format-arguments)
+             (return-from parse-integer-type-modifiers
+               (values result position
+                       (if format-control
+                           (apply #'format nil format-control format-arguments)
+                           nil)))))
+      (unless success?
+        (fail))
+      (let ((int?   nil)
+            (sign   nil)
+            (size   '()))
+        (loop :for modifier :in result
+              :do (ecase modifier
+                    ((:int)
+                     (when int?
+                       (fail "Repeated int keyword."))
+                     (setf int? t))
+                    ((:signed :unsigned)
+                     (when sign
+                       (fail "Conflicting specifiers: ~(~A~) and ~(~A~)."
+                             sign modifier))
+                     (setf sign modifier))
+                    (:short
+                     (unless (null size)
+                       (fail "Conflicting specifiers: ~{~(~A~)~^ ~} and ~(~A~)."
+                             size modifier))
+                     (push modifier size))
+                    (:long
+                     (unless (or (null size) (equal size '(:long)))
+                       (fail "Conflicting specifiers: ~{~(~A~)~^ ~} and ~(~A~)."
+                             size modifier))
+                     (push modifier size))))
+        (values (list sign size) position t)))))
+
+(defrule integer-type
+    (and ;; quick check and for error message
+         (& (+ (or sign-type-modifier size-type-modifier keyword-|int|)))
+         #'parse-integer-type-modifiers)
+  (:function second)
+  (:destructure (sign size &bounds start end)
+    (bp:node* (:primitive-type :which  :integer
+                               :sign   sign
+                               :size   size
+                               :bounds (cons start end)))))
+
+(defrule double-type
+    (or (and keyword-|double| keyword-|long|)
+        (and keyword-|long| keyword-|double|)
+        keyword-|double|)
+  (:lambda (value &bounds start end)
+    (bp:node* (:primitive-type :which  :double
+                               :size   (if (consp value) :long nil)
+                               :bounds (cons start end)))))
+
+(defrule complex-type
+    keyword-|_Complex|)
+
+(defrule simple-primitive-type
+    (or keyword-|void|
+        keyword-|float|
+        keyword-|_Bool|)
   (:lambda (which &bounds start end)
     (bp:node* (:primitive-type :which which :bounds (cons start end)))))
 

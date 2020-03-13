@@ -79,31 +79,48 @@
      :operator :& :bounds (0 . 2)))
   ("sizeof(int)"
    '(:unary-expression
-     (:operand (((:primitive-type () :which :int :bounds (7 . 10)))))
+     (:operand (((:primitive-type
+                  ()
+                  :which  :integer
+                  :sign   nil
+                  :size   nil
+                  :bounds (7 . 10)))))
      :operator :sizeof :bounds (0 . 11)))
   ("_Alignof(int)"
    '(:unary-expression
-     (:operand (((:primitive-type () :which :int :bounds (9 . 12)))))
+     (:operand (((:primitive-type
+                  ()
+                  :which  :integer
+                  :sign   nil
+                  :size   nil
+                  :bounds (9 . 12)))))
      :operator :_alignof :bounds (0 . 13))))
 
 ;;; A.2.2 Declarations
 
 (define-rule-test declaration
   ("int x;"
-   '(:declaration))
+   '(:variable-declaration
+     ()
+     :bounds (0 . 6)))
 
   ("typedef int bar;"
-   '(:declaration
-     (:specifier ((:typedef)
-                  ((:type-specifier () :which :int :bounds (8 . 12)))
-                  ((:type-specifier () :which (:identifier nil :name "bar" :bounds (12 . 15))
-                    :bounds (12 . 15)))))
+   '(:type-declaration
+     (:declarator (((:init-declarator
+                     (:name (((:identifier nil :name "bar" :bounds (12 . 15)))))
+                     :bounds (12 . 15))))
+      :type       (((:primitive-type
+                     ()
+                     :which  :integer
+                     :sign   nil
+                     :size   nil
+                     :bounds (8 . 12)))))
      :bounds (0 . 16)))
+
   ("typedef foo bar;"
    '(:type-declaration
-     (:type (((:type-specifier () :which (:identifier nil :name "foo" :bounds (8 . 11))
-               :bounds (8 . 12))))
-      :name (((:identifier nil :name "bar" :bounds (12 . 15)))))
+     (:declarator (((:identifier nil :name "bar" :bounds (12 . 15))))
+      :type       (((:identifier nil :name "foo" :bounds (8 . 11)))))
      :bounds (0 . 16)))
 
   ("typedef struct _IO_FILE __FILE;"
@@ -123,7 +140,9 @@
 
   ("typedef enum foo bar;"
    '(:type-declaration
-     (:declarator (((:identifier () :name "bar" :bounds (17 . 20))))
+     (:declarator (((:init-declarator
+                     (:name (((:identifier () :name "bar" :bounds (17 . 20)))))
+                     :bounds (17 . 20))))
       :type       (((:enum
                      (:name (((:identifier () :name "foo" :bounds (13 . 16)))))
                      :bounds (8 . 16)))))
@@ -134,6 +153,128 @@
      (:message    (((:string-literal () :value "bla" :encoding nil :bounds (21 . 26))))
       :expression (((:identifier () :name "foo" :bounds (16 . 19)))))
      :bounds (0 . 28))))
+
+(define-rule-test language.c.c.parser::char-type
+  ;; Error cases
+  ("long char" nil)
+
+  ;; Valid cases
+  ("char"          '(:primitive-type
+                     ()
+                     :which  :char
+                     :sign   nil
+                     :bounds (0 . 4)))
+  ("signed char"   '(:primitive-type
+                     ()
+                     :which  :char
+                     :sign   :signed
+                     :bounds (0 . 11)))
+  ("unsigned char" '(:primitive-type
+                     ()
+                     :which  :char
+                     :sign   :unsigned
+                     :bounds (0 . 13))))
+
+(define-rule-test language.c.c.parser::integer-type
+  ;; Error cases
+  ("int int"             nil)
+  ("double int"          nil)
+  ("signed unsigned int" nil)
+  ("short short int"     nil)
+  ("short long int"      nil)
+  ("long long short int" nil)
+  ("long long long int"  nil)
+
+  ;; Valid cases
+  ("int"                     '(:primitive-type
+                               ()
+                               :which  :integer
+                               :sign   nil
+                               :size   nil
+                               :bounds (0 . 3)))
+  ("signed int"             '(:primitive-type
+                              ()
+                              :which  :integer
+                              :sign   :signed
+                              :size   nil
+                              :bounds (0 . 10)))
+  ("unsigned int"           '(:primitive-type
+                              ()
+                              :which  :integer
+                              :sign   :unsigned
+                              :size   nil
+                              :bounds (0 . 12)))
+  ("int unsigned"           '(:primitive-type
+                              ()
+                              :which  :integer
+                              :sign   :unsigned
+                              :size   nil
+                              :bounds (0 . 12)))
+  ("unsigned short int"     '(:primitive-type
+                              ()
+                              :which  :integer
+                              :sign   :unsigned
+                              :size   (:short)
+                              :bounds (0 . 18)))
+  ("unsigned long long int" '(:primitive-type
+                              ()
+                              :which  :integer
+                              :sign   :unsigned
+                              :size   (:long :long)
+                              :bounds (0 . 22)))
+  ("short unsigned int"     '(:primitive-type
+                              ()
+                              :which  :integer
+                              :sign   :unsigned
+                              :size   (:short)
+                              :bounds (0 . 18)))
+  ("short int unsigned"     '(:primitive-type
+                              ()
+                              :which  :integer
+                              :sign   :unsigned
+                              :size   (:short)
+                              :bounds (0 . 18)))
+
+  ("long"                   '(:primitive-type
+                              ()
+                              :which  :integer
+                              :sign   nil
+                              :size   (:long)
+                              :bounds (0 . 4)))
+  ("long long"              '(:primitive-type
+                              ()
+                              :which  :integer
+                              :sign   nil
+                              :size   (:long :long)
+                              :bounds (0 . 9))))
+
+(define-rule-test language.c.c.parser::double-type
+  ;; Invalid cases
+  ("long" nil)
+  ;; Valid cases
+  ("double"      '(:primitive-type
+                   ()
+                   :which  :double
+                   :size   nil
+                   :bounds (0 . 6)))
+  ("long double" '(:primitive-type
+                   ()
+                   :which  :double
+                   :size   :long
+                   :bounds (0 . 11)))
+  ("double long" '(:primitive-type
+                   ()
+                   :which  :double
+                   :size   :long
+                   :bounds (0 . 11))))
+
+(define-rule-test language.c.c.parser::simple-primitive-type
+  ;; Invalid cases
+  ("no-a-type" nil)
+  ;; Valid cases
+  ("void"  '(:primitive-type () :which :void  :bounds (0 . 4)))
+  ("float" '(:primitive-type () :which :float :bounds (0 . 5)))
+  ("_Bool" '(:primitive-type () :which :_bool :bounds (0 . 5))))
 
 (define-rule-test enum-specifier
   ("enum"    nil)
@@ -335,7 +476,9 @@ __suseconds_t tv_usec;};" 'list
                                :bounds (9 . 14))))
                 :type       (((:primitive-type
                                ()
-                               :which  (nil (nil :int))
+                               :which  :integer
+                               :sign   nil
+                               :size   nil
                                :bounds (5 . 9)))))
                :bounds (5 . 16)))))
      :bounds (0 . 31))))
@@ -379,7 +522,10 @@ __suseconds_t tv_usec;};" 'list
    '(:function-definition
      (:return (((:primitive-type
                  ()
-                 :which (nil (nil :int)) :bounds (0 . 4))))
+                 :which  :integer
+                 :sign   nil
+                 :size   nil
+                 :bounds (0 . 4))))
       :name   (((:identifier () :name "f" :bounds (4 . 5)))))
      :specifiers ()
      :bounds     (0 . 10)))
@@ -404,7 +550,10 @@ __suseconds_t tv_usec;};" 'list
                     :bounds (17 . 22))))
       :return    (((:primitive-type
                     ()
-                    :which (nil (nil :int)) :bounds (0 . 4))))
+                    :which  :integer
+                    :sign   nil
+                    :size   nil
+                    :bounds (0 . 4))))
       :name      (((:identifier () :name "a" :bounds (4 . 5)))))
      :specifiers ()
      :bounds     (0 . 37)))
