@@ -15,18 +15,21 @@
     (or (character-ranges #\Space #\Tab)
         (and #\\ #\Newline)     ; "5.1.1.2 Translation phases" Phase 2
         parser.common-rules:c-style-comment/delimited/trimmed)
-  (:error-report nil)
-  (:use-cache nil))
+  (:constant nil)
+  (:use-cache nil)
+  (:error-report nil))
 
 (defrule whitespace/same-line+
     (+ whitespace/same-line)
-  (:error-report nil)
-  (:use-cache nil))
+  (:constant nil)
+  (:use-cache nil)
+  (:error-report nil))
 
 (defrule whitespace/same-line*
     (* whitespace/same-line)
-  (:error-report nil)
-  (:use-cache nil))
+  (:constant nil)
+  (:use-cache nil)
+  (:error-report nil))
 
 (defrule whitespace
     (or whitespace/same-line
@@ -34,18 +37,21 @@
                           #.(code-char 11)  ; vertical tab
                           #.(code-char 12)) ; form feed
         parser.common-rules:c-style-comment/rest-of-line/trimmed)
-  (:error-report nil)
-  (:use-cache nil))
+  (:constant nil)
+  (:use-cache nil)
+  (:error-report nil))
 
 (defrule whitespace+
     (+ whitespace)
-  (:error-report nil)
-  (:use-cache nil))
+  (:constant nil)
+  (:use-cache nil)
+  (:error-report nil))
 
 (defrule whitespace*
     (* whitespace)
-  (:error-report nil)
-  (:use-cache nil))
+  (:constant nil)
+  (:use-cache nil)
+  (:error-report nil))
 
 (macrolet
     ((define-skippable-rules (name expression-whitespace expression-same-line)
@@ -56,18 +62,21 @@
          `(progn
             (defrule ,rule-name-whitespace
                 ,expression-whitespace
+              (:constant nil)
               (:error-report nil)
               (:use-cache nil)
               (:when (eq *skippable-mode* :whitespace)))
 
             (defrule ,rule-name-same-line
                 ,expression-same-line
+              (:constant nil)
               (:error-report nil)
               (:use-cache nil)
               (:when (eq *skippable-mode* :whitespace/same-line)))
 
             (defrule ,rule-name
                 (or ,rule-name-whitespace ,rule-name-same-line)
+              (:constant nil)
               (:use-cache nil))))))
   (define-skippable-rules skippable  whitespace     whitespace/same-line)
   (define-skippable-rules skippable+ (+ whitespace) (+ whitespace/same-line))

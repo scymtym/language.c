@@ -38,11 +38,11 @@
       :expression (((:identifier () :name "a" :bounds (0 . 1)))))
      :pointer t :bounds (0 . 4)))
   ("a++"
-   '(:unary-operator
+   '(:unary-expression
      (:expression (((:identifier () :name "a" :bounds (0 . 1)))))
      :operator :|++| :position :postfix :bounds (0 . 3)))
   ("a--"
-   '(:unary-operator
+   '(:unary-expression
      (:expression (((:identifier () :name "a" :bounds (0 . 1)))))
      :operator :|--| :position :postfix :bounds (0 . 3)))
 
@@ -54,36 +54,36 @@
   ("a"
    '(:identifier () :name "a" :bounds (0 . 1)))
   ("a++"
-   '(:unary-operator
+   '(:unary-expression
      (:expression (((:identifier () :name "a" :bounds (0 . 1)))))
      :operator :|++| :position :postfix :bounds (0 . 3)))
   ("++a"
-   '(:unary-operator
+   '(:unary-expression
      (:operand (((:identifier () :name "a" :bounds (2 . 3)))))
      :operator :++ :bounds (0 . 3)))
   ("--a"
-   '(:unary-operator
+   '(:unary-expression
      (:operand (((:identifier () :name "a" :bounds (2 . 3)))))
      :operator :-- :bounds (0 . 3)))
   ("-a"
-   '(:unary-operator
+   '(:unary-expression
      (:operand (((:identifier () :name "a" :bounds (1 . 2)))))
      :operator :- :bounds (0 . 2)))
   ("+a"
-   '(:unary-operator
+   '(:unary-expression
      (:operand (((:identifier () :name "a" :bounds (1 . 2)))))
      :operator :+ :bounds (0 . 2)))
   ("&a"
-   '(:unary-operator
+   '(:unary-expression
      (:operand (((:identifier () :name "a" :bounds (1 . 2)))))
      :operator :& :bounds (0 . 2)))
   ("sizeof(int)"
-   '(:unary-operator
-     (:operand (((:type-specifier () :which :int :bounds (7 . 10)))))
+   '(:unary-expression
+     (:operand (((:primitive-type () :which :int :bounds (7 . 10)))))
      :operator :sizeof :bounds (0 . 11)))
   ("_Alignof(int)"
-   '(:unary-operator
-     (:operand (((:type-specifier () :which :int :bounds (9 . 12)))))
+   '(:unary-expression
+     (:operand (((:primitive-type () :which :int :bounds (9 . 12)))))
      :operator :_alignof :bounds (0 . 13))))
 
 ;;; A.2.2 Declarations
