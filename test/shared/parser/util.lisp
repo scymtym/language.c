@@ -9,7 +9,7 @@
 (defmacro define-rule-test (rule-and-options &body cases)
   (destructuring-bind (rule &key skippable
                                  floating-constants?
-                                 extended-unary-expressions?)
+                                 extended-unary-expressions)
       (alexandria:ensure-list rule-and-options)
     (let ((test-name (alexandria:symbolicate '#:rule. rule)))
       `(test ,test-name
@@ -21,8 +21,8 @@
                          (:all       :whitespace)))))
                ,@(when floating-constants?
                    `((language.c.shared.parser::*floating-point-constants?* t)))
-               ,@(when extended-unary-expressions?
+               ,@(when extended-unary-expressions
                    `((language.c.shared.parser::*extended-unary-expression*
-                      'language.c.c.parser::cast-expression))))
+                      ',extended-unary-expressions))))
            (architecture.builder-protocol:with-builder ('list)
              (parses-are (,rule) ,@cases)))))))

@@ -23,9 +23,9 @@
 
 (defmacro define-rule-test (name &body body)
   `(language.c.shared.parser.test:define-rule-test
-       (,name :skippable                   :all
-              :floating-constants?         t
-              :extended-unary-expressions? t)
+       (,name :skippable                  :all
+              :floating-constants?        t
+              :extended-unary-expressions language.c.c.parser::cast-expression)
      ,@body))
 
 (def-suite :language.c.c.parser)
