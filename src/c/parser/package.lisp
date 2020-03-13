@@ -19,7 +19,7 @@
   (:import-from #:esrap
    #:defrule #:&bounds
    #:character-ranges
-   #:? #:&)
+   #:? #:& #:!)
 
   (:import-from #:parser.common-rules
    #:defrule/s)
@@ -47,7 +47,8 @@
 
    #:punctuator-=
 
-   #:punctuator-|,| #:punctuator-|;| #:punctuator-|:|
+   #:punctuator-|:| #:punctuator-|;| #:punctuator-|...|
+   #:punctuator-|,|
 
    #:conditional-expression
    #:constant-expression)

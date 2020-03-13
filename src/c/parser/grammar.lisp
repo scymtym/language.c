@@ -13,12 +13,12 @@
 
 ;;; A.1.1 Lexical elements
 
-(defrule token
+(defrule token ; TODO never used
     (or keyword identifier constant string-literal punctuator))
 
 ;;; A.1.2 Keywords
 
-(deftokens (keyword t :skippable whitespace*)
+(deftokens (keyword t :skippable whitespace* :requires-separation? t)
   |auto|          |extern|        |short|         |while|
   |break|         |float|         |signed|        |_Alignas|
   |case|          |for|           |sizeof|        |_Alignof|
@@ -30,11 +30,15 @@
   |do|            |register|      |unsigned|      |_Noreturn|
   |else|          |restrict|      |void|          |_Static_assert|
   |enum|          |return|        |volatile|      |_Thread_local|)
+
+(defrule non-keyword-identifier ; TODO this rule will be a huge performance problem
+    (and (! keyword) identifier)
+  (:function second))
 
 ;;; A.2.1 Expression
 
 (defrule primary-expression
-    (or identifier
+    (or non-keyword-identifier
         constant
         string-literal
         expression/parentheses
@@ -94,7 +98,7 @@
   assignment-expression punctuator-|,|)
 
 (defrule member-access
-    (and (or punctuator-|.| punctuator-->) identifier)
+    (and (or punctuator-|.| punctuator-->) non-keyword-identifier)
   (:destructure (operator member &bounds start end)
     (declare (ignore start))
     (lambda (expression start)
@@ -108,9 +112,9 @@
   (:lambda (operator &bounds start end)
     (declare (ignore start))
     (lambda (expression start)
-      (bp:node* (:unary-operator :operator operator
-                                 :position :postfix
-                                 :bounds   (cons start end))
+      (bp:node* (:unary-expression :operator operator
+                                   :position :postfix
+                                   :bounds   (cons start end))
         (1 :expression expression)))))
 
 (defrule unary-expression
@@ -122,7 +126,7 @@
         (and (and)              postfix-expression))
   (:destructure (operator operand &bounds start end)
     (if operator
-        (bp:node* (:unary-operator :operator operator :bounds (cons start end))
+        (bp:node* (:unary-expression :operator operator :bounds (cons start end))
           (1 :operand operand))
         operand)))
 
@@ -130,14 +134,20 @@
     (or punctuator-& punctuator-* punctuator-+ punctuator-- punctuator-~ punctuator-!))
 
 (defrule cast-expression
-    (or unary-expression
-        (and type-name/parentheses cast-expression)))
+    (or (and type-name/parentheses cast-expression)
+        (and (and)                 unary-expression))
+  (:destructure (type expression &bounds start end)
+    (if type
+        (bp:node* (:cast-expression :bounds (cons start end))
+          (1 :type       type)
+          (1 :expression expression))
+        expression)))
 
 (defrule assignment-expression
     ;; TODO UNARY-EXPRESSION is not here in the original grammar
     (or proper-assignment-expression
         conditional-expression ; TODO CONDITIONAL-EXPRESSION is in shared grammar => no postfix-expression
-        unary-expression
+        ; cast-expression
         ))
 
 (defrule proper-assignment-expression
@@ -153,9 +163,10 @@
 
 (defrule expression
     (and assignment-expression (* expression-rest))
-  (:destructure (first second)
+  (:destructure (first second &bounds start end)
     (if second
-        (list* first second)
+        (bp:node* (:expression-sequence :bounds (cons start end))
+          (* :expression (list* first second)))
         first)))
 
 (defrule expression-rest
@@ -198,7 +209,7 @@
   (:function second))
 
 (defrule init-declarator
-    (and declarator (? (and punctuator-|=| initializer)))
+    (and declarator/?s (? (and punctuator-|=| initializer)))
   (:destructure (name (&optional equals initializer) &bounds start end)
     (declare (ignore equals))
     (bp:node* (:init-declarator :bounds (cons start end))
@@ -254,14 +265,14 @@
         static_assert-declaration))
 
 (defrule struct-declaration/declarator
-    (and (+ specifier-qualifier) (* struct-declarator) punctuator-|;|)
+    (and (+ specifier-qualifier/?s) (* struct-declarator) punctuator-|;|)
   (:destructure (qualifiers declarators semicolon &bounds start end)
     (declare (ignore semicolon))
     (bp:node* (:struct-declarator :bounds (cons start end))
       (* :qualifier  qualifiers)
       (* :declarator declarators))))
 
-(defrule specifier-qualifier
+(defrule/s (specifier-qualifier :s? nil :skippable?-expression whitespace*)
     (and (or type-specifier
              type-qualifier
              alignment-specifier)
@@ -283,8 +294,8 @@
       (1    :expression expression))))
 
 (defrule enum-specifier
-    (and keyword-|enum| (or (and (? identifier) enum-body)
-                            (and identifier)))
+    (and keyword-|enum| (or (and (? non-keyword-identifier) enum-body)
+                            (and non-keyword-identifier)))
   (:function second)
   (:destructure (name &optional enumerators &bounds start end)
     (bp:node* (:enum :bounds (cons start end))
@@ -299,7 +310,7 @@
     enumerator punctuator-|,|)
 
 (defrule enumerator
-    (and identifier #|TODO enumeration-constant|# (? (and punctuator-|=| constant-expression)))
+    (and non-keyword-identifier #|TODO enumeration-constant|# (? (and punctuator-|=| constant-expression)))
   (:destructure (name (&optional equals value) &bounds start end)
     (declare (ignore equals))
     (bp:node* (:enumerator :bounds (cons start end))
@@ -310,7 +321,7 @@
     (and keyword-|_Atomic| type-name/parentheses)
   (:function second)
   (:lambda (type)
-    (error "not implement")))
+    (error "TODO not implemented")))
 
 (defrule type-qualifier
     (or keyword-|const| keyword-|restrict| keyword-|volatile| keyword-|_Atomic|))
@@ -322,7 +333,7 @@
     (and keyword-|_Alignas| punctuator-|(| (or type-name constant-expression) punctuator-|)|)
   (:function third))
 
-(defrule declarator
+(defrule/s (declarator :s? nil :skippable?-expression whitespace*)
     (and (? pointer-list) direct-declarator)
   (:destructure (pointers declarator &bounds start end)
     (if pointers
@@ -335,11 +346,13 @@
   (:function second))
 
 (defrule direct-declarator
-    (and (or identifier declarator/parentheses) direct-declarator*)
+    (and (or non-keyword-identifier declarator/parentheses) direct-declarator*)
   (:destructure (name suffixes &bounds start end)
-    (bp:node* (:direct-declarator :bounds (cons start end))
-      (1 :name   name)
-      (* :suffix suffixes))))
+    (if nil ; TODO suffixes
+        (bp:node* (:direct-declarator :bounds (cons start end))
+          (1 :name   name)
+          (* :suffix suffixes))
+        name)))
 
 (defrule direct-declarator*
     (* (or direct-declarator/bracket
@@ -377,7 +390,7 @@
   parameter-declaration punctuator-|,|)
 
 (defrule parameter-declaration
-    (and declaration-specifiers (or declarator
+    (and declaration-specifiers/?s (or declarator
                                     (? abstract-declarator)))
   (:destructure (specifiers declarator &bounds start end)
     (bp:node* (:parameter-declaration :bounds (cons start end))
@@ -385,6 +398,7 @@
       (1 :declarator declarator))))
 
 ;;; `identifier-list' defined in shared grammar
+;;; TODO maybe create a local definition that uses non-keyword-identifier?
 
 (defrule type-name
     (and (+ specifier-qualifier) (? abstract-declarator))
@@ -418,7 +432,7 @@
   (:function second))
 
 (defrule typedef-name
-    (and identifier whitespace*)
+    (and non-keyword-identifier whitespace*)
   (:function first))
 
 (defrule initializer
@@ -457,7 +471,7 @@
       (1 :index index))))
 
 (defrule member-designator
-    (and punctuator-|.| identifier)
+    (and punctuator-|.| non-keyword-identifier)
   (:function second)
   (:lambda (member &bounds start end)
     (bp:node* (:member-designator :bounds (cons start end))
@@ -488,10 +502,16 @@
 (defrule labeled-statement
     (and (or (and keyword-|case| constant-expression)
              (and keyword-|default|)
-             (and identifier))
+             (and non-keyword-identifier))
          punctuator-|:| statement))
 
-(define-bracket-rule compound-statement (punctuator-{ punctuator-})
+(defrule compound-statement
+    block-items
+  (:lambda (items &bounds start end)
+    (bp:node* (:compound-statement :source (cons start end))
+      (* :item items))))
+
+(define-bracket-rule block-items (punctuator-{ punctuator-})
     (* block-item/?s))
 
 (defrule block-item
@@ -511,7 +531,7 @@
 
 (defrule if-statement
     (and keyword-|if| expression/parentheses statement (? (and keyword-|else| statement)))
-  (:destructure (keyword1 test then &optional keyword2 else
+  (:destructure (keyword1 test then (&optional keyword2 else)
                  &bounds start end)
     (declare (ignore keyword1 keyword2))
     (bp:node* (:if-statement :bounds (cons start end))
@@ -573,7 +593,7 @@
   (:function first))
 
 (defrule goto-statement
-    (and keyword-|goto| identifier)
+    (and keyword-|goto| non-keyword-identifier)
   (:function second)
   (:lambda (label &bounds start end)
     (bp:node* (:goto-statement :bounds (cons start end))
