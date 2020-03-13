@@ -1,6 +1,6 @@
 ;;;; language.c.interface.asd --- System definition for the interface module.
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -13,10 +13,13 @@
   :depends-on  ("language.c.preprocessor.parser"
                 "language.c.preprocessor.evaluator"
 
-                "language.c.c.parser")
+                "language.c.c.parser"
+
+                "language.c.toolchain-information")
 
   :components  ((:module     "interface"
                  :pathname   "src/interface"
+                 :serial     t
                  :components ((:file       "package")
                               (:file       "protocol"))))
 
