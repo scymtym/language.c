@@ -1,6 +1,6 @@
 ;;;; package.lisp --- Package definition for tests of the c.parser module.
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -23,7 +23,9 @@
 
 (defmacro define-rule-test (name &body body)
   `(language.c.shared.parser.test:define-rule-test
-       (,name :skippable :all :floating-constants? t)
+       (,name :skippable                   :all
+              :floating-constants?         t
+              :extended-unary-expressions? t)
      ,@body))
 
 (def-suite :language.c.c.parser)
