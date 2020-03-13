@@ -6,7 +6,7 @@
 
 (cl:in-package #:language.c.preprocessor.model)
 
-(defclass builder ()
+(defclass builder () ; TODO make a mixin - the c.model module has the same
   ())
 
 (defmethod bp:make-node :around ((builder builder) (kind t)
@@ -52,7 +52,7 @@
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :punctuator))
                          &key which)
-  (make-instance 'punctuator :which which))
+  (make-instance 'punctuator :which which)) ; TODO use singletons
 
 (defmethod bp:make-node ((builder builder)
                          (kind    (eql :header-name))
@@ -133,7 +133,6 @@
                       (left     if*)
                       (right    t)
                       &key)
-  ;; (setf (%test left) right)
   (vector-push-extend right (test left))
   left)
 
@@ -192,7 +191,7 @@
                       (left     define)
                       (right    t)
                       &key)
-  (vector-push-extend right (replacement left))
+  (vector-push-extend right (replacement left)) ; TODO only allocate vector for multi-part replacement
   left)
 
 (defmethod bp:relate ((builder  builder)
@@ -200,7 +199,7 @@
                       (left     define-function-like-macro)
                       (right    t)
                       &key)
-  (vector-push-extend right (parameters left))
+  (vector-push-extend right (parameters left)) ; TODO only allocate vector for multiple parameters
   left)
 
 (defmethod bp:make-node ((builder builder)
