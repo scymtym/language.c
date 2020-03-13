@@ -71,11 +71,12 @@
   ((%file :initarg :file
           :reader  file)))
 
-(defmethod resolve-include ((environment file-environment)
-                            (kind        t)
-                            (name        string))
-  (or (probe-file (merge-pathnames name (file environment)))
-      (call-next-method)))
+(defmethod resolve-include ((kind        t)
+                            (name        string)
+                            (environment file-environment))
+  (let ((candidate (merge-pathnames name (file environment))))
+    (or (probe-file candidate)
+        (call-next-method))))
 
 ;;; `include-environment'
 
@@ -88,6 +89,9 @@
    (%included-files :initarg  :included-files
                     :reader   included-files
                     :initform (make-hash-table :test #'equalp))))
+
+(defmethod file ((environment include-environment))
+  (first (%include-stack environment)))
 
 (defmethod push-file ((file pathname) (environment include-environment))
   (push file (%include-stack environment)))
