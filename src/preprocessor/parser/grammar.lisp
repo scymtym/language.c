@@ -154,7 +154,8 @@
 (defrule if-section
     (and punctuator-|#| (or (and (or keyword-|ifdef| keyword-|ifndef|) (and identifier)) ; TODO should this also be (+ pp-token)
                             (and keyword-|if|                          (+ pp-token)))
-         new-line (? (and (! (or elif-group else-group)) group))
+         (and whitespace/same-line* new-line)
+         (? (and (! (or elif-group else-group)) group))
          if-else-section)
   (:destructure (hash (keyword test) newline (&optional guard then) else
                  &bounds start end)
@@ -211,17 +212,6 @@
          whitespace/same-line*
          (? parser.common-rules:c-style-comment/rest-of-line/trimmed)
          new-line)
-
-  #+no (and |#| (or
-                 (and define identifier replacement-list new-line)
-                 (and define lparen (? identifier-list) |)| replacement-list new-line)
-                 (and define lparen |...| |)| replacement-list new-line)
-                 (and define lparen identifier-list |,| |...| |)| replacement-list new-line)
-                 (and undef identifier new-line)
-                 (and line pp-tokens new-line)
-                 (and error (? pp-tokens) new-line)
-                 (and pragma (? pp-tokens) new-line)
-                 new-line))
   (:function third))
 
 (define-control-line-rule include-line keyword-|include|
@@ -300,7 +290,9 @@
 
 (defrule text-line
     (or (and (+ pp-token) (! #\\) new-line)
-        (and (and)        whitespace/same-line* (! #\\) #\Newline)) ; TODO temp
+        (and (and)        whitespace/same-line* (or (and (! #\\) #\Newline)
+                                                    (character-ranges #.(code-char 11) #.(code-char 12)))
+             )) ; TODO temp
   (:function first)
   (:lambda (tokens &bounds start end)
     (bp:node* (:line :bounds (cons start end))
@@ -314,9 +306,10 @@
     (and whitespace/same-line* preprocessing-token whitespace/same-line*)
   (:function second))
 
-(defrule new-line
+(defrule new-line ; TODO this should be defined elsewhere
     (and (? parser.common-rules:c-style-comment/rest-of-line)
-         (or #\Newline <end-of-input>))
+         (or (character-ranges #\Newline #.(code-char 11) #.(code-char 12))
+             <end-of-input>))
   (:constant nil))
 
 (defrule on-off-switch ; TODO unused?
