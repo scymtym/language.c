@@ -1,6 +1,6 @@
 ;;;; language.c.c.parser.asd --- System definition for the c.parser module.
 ;;;;
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
 
@@ -22,6 +22,7 @@
                  :pathname   "src/c/parser"
                  :components ((:file       "package")
                               (:file       "protocol")
+                              (:file       "util")
                               (:file       "grammar"))))
 
   :in-order-to ((test-op (test-op "language.c.c.parser/test"))))

@@ -1,7 +1,7 @@
 ;;;; grammar.lisp --- Grammar for C18 (excluding the preprocessor language)
 ;;;;
 ;;;; Copyright (C) 2019 Daniel Kochmański
-;;;; Copyright (C) 2019 Jan Moringen
+;;;; Copyright (C) 2019, 2020 Jan Moringen
 ;;;;
 ;;;; Author: Daniel Kochmański
 ;;;;         Jan Moringen <jmoringe@techfak.uni-bielefeld.de>
@@ -58,17 +58,11 @@
 (defrule postfix-expression
     (or (and type-name/parentheses brace-initializer postfix-expression*)
         (and primary-expression/?s (and)             postfix-expression*))
-  (:destructure (subject initializer suffix &bounds start)
-    (flet ((maybe-apply-suffix (initial)
-             (if suffix
-                 (reduce (lambda (suffix expression)
-                           (funcall suffix expression start))
-                         (reverse suffix)
-                         :initial-value initial :from-end t) ; TODO avoid reverse))
-                 initial)))
-      (maybe-apply-suffix (if initializer
-                              (error "not implemented")
-                              subject)))))
+  (:destructure (subject initializer suffixes &bounds start)
+    (let ((primary (if initializer
+                       (error "not implemented")
+                       subject)))
+      (maybe-apply-suffix primary suffixes start))))
 
 (defrule postfix-expression*
     (* (or subscript
