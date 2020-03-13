@@ -95,9 +95,12 @@ TARGET is usually a stream."))
   ;; adjacent elements if both are either an identifier or a number.
   (loop :for previous = nil :then token
         :for token :in element
-        :when (and previous
-                   (typep previous '(or model:identifier model::number*))
+        :when (and (typep previous '(or model:identifier model::number*))
                    (typep token '(or model:identifier model::number*)))
         :do (write-char #\Space target)
-        :unless (eq token :join)
+                                        ; :unless (eq token :join)
+        :unless (and (and (typep previous 'model::punctuator)
+                          (eql (model::which previous) #\Newline))
+                     (and (typep token 'model::punctuator)
+                          (eql (model::which token) #\Newline)))
         :do (output token target)))

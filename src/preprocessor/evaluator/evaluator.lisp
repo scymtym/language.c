@@ -54,7 +54,14 @@
     ;; END.
     (multiple-value-bind (expansion remainder)
         (evaluate macro remainder environment)
-      (values '() (append expansion remainder) (cons element (lastcar expansion))))
+      (cond ((eq expansion :not-expanded)
+             (values (list element) remainder))
+            ((null expansion)
+             (values '() remainder))
+            ((typep macro 'object-like-macro) ; TODO macro should indicate this
+             (values '() (append expansion remainder) (cons element (lastcar expansion))))
+            (t
+             (values '() (append expansion remainder)))))
     (values (list element) remainder)))
 
 ;;;
@@ -161,11 +168,12 @@
        (restart-case
            (let* ((filename (resolve-include kind name environment))
                   (content  (include filename environment)))
+             ; (format t "// Including ~A~%" filename)
              (unless (eq content t)
                (push-file filename environment)
                (unwind-protect
                     (let ((ast (language.c.preprocessor.parser:parse
-                                content (make-instance 'model:builder))))
+                                content (make-instance 'model:builder)))) ; TODO reuse builder
                       (setf result (evaluate ast '() environment))
                       (go :done))
                  (pop-file environment))))
@@ -186,6 +194,10 @@
        (return-from evaluate (values result remainder)))))
 
 ;;; 6.10.3 Macro replacement
+;;;
+;;; The first three methods are for object-like and function-like
+;;; macro definition and undefinition, the rest are for macro
+;;; replacement.
 
 (macrolet ((with-macro-definition ((name-var element remainder) &body body)
              `(let ((,name-var (model:name (model:name ,element))))
@@ -201,7 +213,9 @@
               (if (emptyp replacement)
                   (make-instance 'empty-macro)
                   (make-instance 'object-like-macro
-                                 :replacement replacement))))))
+                                 :replacement replacement))))
+      #+no (format t "// Defining object-like macro \"~A\" -> ~A~%"
+              name (lookup name environment))))
 
   (defmethod evaluate ((element     model:define-function-like-macro)
                        (remainder   t)
@@ -212,7 +226,9 @@
                                     (model:parameters element)))
                   (replacement (model:replacement element)))
               (make-instance 'function-like-macro :parameters  parameters
-                                                  :replacement replacement)))))
+                                                  :replacement replacement)))
+      #+no (format t "// Defining function-like macro \"~A\" -> ~A~%"
+              name (lookup name environment))))
 
   (defmethod evaluate ((element     model:undefine)
                        (remainder   t)
@@ -233,6 +249,9 @@
 (defmethod evaluate ((element     function-like-macro)
                      (remainder   t)
                      (environment t))
+  (unless (and (typep (first remainder) 'model::punctuator)
+               (eq (model::which (first remainder)) :|(|))
+    (return-from evaluate :not-expanded))
   (loop :with argument-environment = (make-argument-collecting-environment
                                       (parameters element) environment)
         :for (first . rest) = remainder :then new-remainder
@@ -275,7 +294,6 @@
          (macro     (lookup name environment))
          (string    (evaluate-to-string macro (make-instance 'environment)))
          ) ; TODO do not cons an environment
-    (clouseau:inspect (list parameter macro environment string remainder))
     (values (list (make-instance 'model::string-literal :value string))
             remainder)))
 
@@ -303,7 +321,9 @@
 (defmethod evaluate ((element     model:error*)
                      (remainder   t)
                      (environment t))
-  (error "~{~A~^ ~}" (coerce (model:message element) 'list)))
+  (cerror "Ignore the error" "~{~A~^ ~}"
+          (map 'list (rcurry #'evaluate-to-string environment)
+               (model:message element))))
 
 (defmethod evaluate ((element     model:pragma)
                      (remainder   t)

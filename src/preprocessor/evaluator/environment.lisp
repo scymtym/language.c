@@ -207,10 +207,12 @@
     (unless (member state '(:argument :rest-argument))
       (error "Expected ~(~A~) but got argument (~A) macro ~A"
              state element :TODO)))
-  (multiple-value-bind (value remainder)
-      (evaluate element remainder (parent environment))
-    (appendf (%argument environment) value)
-    (values '() remainder)))
+  (appendf (%argument environment) (list element))
+  (values '() remainder)
+  #+no (multiple-value-bind (value remainder)
+           (evaluate element remainder (parent environment))
+         (appendf (%argument environment) value)
+         (values '() remainder)))
 
 ;;; `test-environment'
 ;;;

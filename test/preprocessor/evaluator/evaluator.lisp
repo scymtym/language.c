@@ -99,6 +99,7 @@
 
    '("#define foo() x~%foo()"                         "x~%")
    '("#define foo(x) x~%foo(1)"                       "1~%")
+   '("#define foo(x) x~%foo(1 2)"                     "1 2~%")
 
    '("#define foo(x,...) x __VA_ARGS__~%foo(1,2,3,4)" "1 2 3 4~%")
 
@@ -106,17 +107,33 @@
    '("#define foo(x) x~%foo(bar())"                   "bar()~%")
 
    ;; Multi-line macro invocation
-   '("#define foo(x) x~%foo(bar(1,2)~%fez)"           "bar(1,2)~%fez~%")))
+   '("#define foo(x) x~%foo(bar(1,2)~%fez)"           "bar(1,2)~%fez~%")
+
+   ;; Recursion
+   '("#define foo() foo~%foo()"                       "foo")
+   '("#define foo(x,y) x + y~%foo(foo(1,2),foo(3,4))" "1+2+3+4~%")
+   '("#define foo(x,y) x + y~@
+      #define bar foo(3,4)~@
+      foo(foo(1,2),bar)"
+                                                      "1+2+3+4~%")
+   '("#define foo(x,y) x + y~@
+      #define foo2(x,y) x + y~@
+      #define bar foo2(3,4)~@
+      foo(foo(1,2),bar)"
+                                                      "1+2+3+4~%")))
 
 (test stringification.smoke
   "Smoke test for the # stringification operator."
 
   (eval-cases
-   ; '("#define foo(x) #x~%foo(bar)"                  "\"bar\"~%")
-   ; '("#define foo(x) #x~%foo(bar baz)"              "\"bar baz\"~%")
-   ; '("#define foo(x) #x~%foo(1 2 3)"                "\"1 2 3\"~%")
+   '("#define foo(x) #x~%foo(bar)"                  "\"bar\"~%")
+   '("#define foo(x) #x~%foo(bar baz)"              "\"bar baz\"~%")
+   '("#define foo(x) #x~%foo(1 2 3)"                "\"1 2 3\"~%")
    '("#define foo bar~%#define baz(x) #x~%baz(foo)" "\"foo\"~%")
    ))
+(language.c.interface:preprocess "#define foo 1, 2
+#define bar(x,y) x+y
+bar(foo,3)")
 
 (test concatenation.smoke
   "Smoke test for the ## concatenation operator."
@@ -130,15 +147,15 @@
    '("#define foo(x) x~@
       #define bar(x, y) x##y(fez)~@
       bar(f, oo)"
-                                             "fez~%")
+     "fez~%")
    '("#define foo(x) x~@
       #define bar(y, z) y##z(baz)~@
       bar(fez f, oo)"
-                                             "fez baz~%")
+     "fez baz~%")
    '("#define foo(x) #x~@
       #define bar(x, y) x##y(1 2 3)~@
       bar(f, oo)"
-                                             "\"1 2 3\"~%")))
+     "\"1 2 3\"~%")))
 
 ;;;
 
@@ -157,19 +174,7 @@
 
    '("#define foo 1, 2~@
       #define bar(x,y) x+y~@
-      bar(foo)"
-     "1+2~%")
+      bar(foo,3)"
+     "1,2+3~%")
 
-   '("#define foo(x,y) x + y~%baz foo(foo(1,2),foo(3,4))"
-     "baz 1+2+3+4~%")
-   '("#define foo(x,y) x + y~%#define bar foo(3,4)~%baz foo(foo(1,2),bar)"
-     "baz 1+2+3+4~%")
-
-   '("#define foo(x,y) x + y~@
-      baz foo(foo(1,2),foo(3,4))~%"
-     "baz 1+2+3+4~%")
-   '("#define foo(x,y) x + y~@
-      #define foo2(x,y) x + y~@
-      #define bar foo2(3,4)~@
-      baz foo(foo(1,2),bar)"
-     "baz 1+2+3+4~%")))
+))
