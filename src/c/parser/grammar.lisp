@@ -59,6 +59,23 @@
     (and (or |default| type-name) punctuator-|:| assignment-expression))
 
 ;; TODO much of the postfix stuff is duplicated in the shared grammar
+
+;;; Postfix expression use a slightly interesting pattern: for an
+;;; input like "a[1]", the `postfix-expression' should return a
+;;; `:subscript' node that has the node corresponding to "a" as one
+;;; child and the node corresponding to "1" as the other child.
+;;;
+;;; This cannot be done in a bottom-up fashion in the
+;;; `postfix-expression' rule without analyzing the AST for the
+;;; postfix part. Such an analysis is inefficient and only possible if
+;;; the builder that has been used to construct the AST supports the
+;;; "unbuilding" operations.
+;;;
+;;; A better way is letting the various postfix kinds construct the
+;;; AST directly. To achieve this, the rules for postfix parts return
+;;; a function that accepts a node and returns the finished AST in
+;;; which the passed node is a child. For a chain of such suffix
+;;; parts, apply this pattern via `reduce' yields the desired AST.
 (defrule postfix-expression
     (or (and type-name/parentheses brace-initializer postfix-expression*)
         (and primary-expression/?s (and)             postfix-expression*))
