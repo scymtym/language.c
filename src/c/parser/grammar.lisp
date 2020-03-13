@@ -224,30 +224,37 @@
         keyword-|auto|
         keyword-|register|))
 
-(defrule type-specifier
-    (or keyword-|void|
-        keyword-|char|
-        keyword-|short|
-        keyword-|int|
-        keyword-|long|
-        keyword-|float|
-        keyword-|double|
-        keyword-|signed|
-        keyword-|unsigned|
-        keyword-|_Bool|
-        keyword-|_Complex|
+(defrule/s (type-specifier :s? nil :skippable?-expression whitespace*)
+    (or primitive-type
         atomic-type-specifier
         struct-or-union-specifier
         enum-specifier
         typedef-name ; TODO uncomment and figure out how to make function-definition work despite it
         )
   #+no (:lambda (which &bounds start end)
-    (bp:node* (:type-specifier :which which :bounds (cons start end)))))
+         (bp:node* (:type-specifier :which which :bounds (cons start end)))))
+
+(defrule primitive-type
+    (or keyword-|void|
+        (and (? keyword-|long|) keyword-|double|)
+        (and (? (or keyword-|signed|
+                    keyword-|unsigned|)) ; TODO long signed int
+             (or (and (or keyword-|short|
+                          (and keyword-|long| (? keyword-|long|)))
+                      (? keyword-|int|))
+                 (and (and)                               keyword-|int|)
+                 (and (and)                               keyword-|char|)))
+        keyword-|float|
+
+        keyword-|_Bool|
+        keyword-|_Complex|)
+  (:lambda (which &bounds start end)
+    (bp:node* (:primitive-type :which which :bounds (cons start end)))))
 
 (defrule struct-or-union-specifier
     (and struct-or-union
-         (or (and (? identifier) punctuator-{ struct-declaration-list punctuator-})
-             (and identifier)))
+         (or (and (? non-keyword-identifier) punctuator-{ struct-declaration-list punctuator-})
+             (and non-keyword-identifier)))
   (:destructure (keyword (name &optional open body close) &bounds start end)
     (declare (ignore open close))
     (bp:node* (keyword :bounds (cons start end))
