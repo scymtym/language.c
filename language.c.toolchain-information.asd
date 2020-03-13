@@ -18,7 +18,11 @@
                  :components ((:file       "package")
                               (:file       "guess")
                               (:file       "registry")
-                              (:file       "augment"))))
+                              (:file       "augment")))
+
+                (:module     "data"
+                 :pathname   "data/toolchain-information"
+                 :components ((:file       "gcc-9-x86_64-linux-gnu"))))
 
   :in-order-to ((test-op (test-op "language.c.toolchain-information/test"))))
 
