@@ -1,0 +1,22 @@
+* Introduction
+
+  The code in this module allows storing and retrieving information
+  about compilation environments such as builtin macro definitions and
+  include search paths. The basic idea is to include this information
+  for different compilation environments and select the appropriate
+  one at runtime.
+
+  The information is stored as Lisp code and data in files in the
+  =data/toolchain-information= directory. This approach has two
+  benefits:
+
+  + No dependency on external programs or files at runtime since all
+    information is loaded at compile (or load) time.
+
+  + It is (in theory) possible to mimic various compilers and
+    platforms and switch between them at runtime.
+
+  A downside of this approach is of course the necessity to collect
+  and maintain the compilation environment information. This process
+  can be automated somewhat using the program in the file
+  =tools-for-build/gather-toolchain-information.lisp=.
