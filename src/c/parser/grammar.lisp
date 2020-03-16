@@ -384,7 +384,7 @@
                                :size   (if (consp value) :long nil)
                                :bounds (cons start end)))))
 
-(defrule complex-type
+(defrule complex-type ; TODO modifiers
     keyword-|_Complex|)
 
 (defrule simple-primitive-type
@@ -502,7 +502,7 @@
 
 (defrule direct-declarator*
     (* (or direct-declarator/bracket
-           parameter-type-list
+           parameter-type-list/suffix ; TODO should be unused since we have function-declaration
            identifier-list/parentheses)))
 
 (defrule direct-declarator/bracket
@@ -512,7 +512,14 @@
              (and type-qualifier-list keyword-|static| assignment-expression)
              (and (? type-qualifier-list) punctuator-*))
          punctuator-])
-  (:function second))
+  (:function second)
+  (:lambda (stuff &bounds start end)
+    (declare (ignore start))
+    (lambda (declarator start)
+      (bp:node* (:array :stuff stuff :bounds (cons start end))
+        (1 :declarator declarator)
+        ; (1 :stuff      stuff)
+        ))))
 
 (defrule identifier-list/parentheses
     (and punctuator-|(| (? identifier-list) punctuator-|)|)
@@ -527,6 +534,15 @@
 
 (defrule type-qualifier-list ; TODO remove this rule?
     (+ type-qualifier))
+
+(defrule parameter-type-list/suffix
+    parameter-type-list
+  (:lambda (parameters &bounds start end)
+    (declare (ignore start))
+    (lambda (declarator start)
+      (bp:node* (:function :bounds (cons start end))
+        (1 :declarator declarator)
+        (* :parameter  parameters)))))
 
 (defrule parameter-type-list/maybe-empty
     (or parameter-type-list
