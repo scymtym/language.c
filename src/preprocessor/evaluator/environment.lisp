@@ -116,6 +116,12 @@
                     :reader   included-files
                     :initform (make-hash-table :test #'equalp))))
 
+(defmethod initialize-instance :after ((instance include-environment)
+                                       &key file)
+  (let ((file (make-instance 'resolved-include :file file :anchor nil)))
+    (push-file file instance))
+  (setf (gethash file (included-files instance)) "hack"))
+
 (defmethod file ((environment include-environment))
   (first (%include-stack environment)))
 

@@ -17,13 +17,8 @@
     #+linux              #P"/usr/include/c++/9/"))
 
 (defun make-environment (source &key search-path)
-  (make-instance 'eval:include-environment
-                 :file        source ; TODO this should initialize include-stack and included-files
-                                        ; :search-path search-path
-                 :include-stack (list source)
-                 :included-files (let ((h (make-hash-table :test #'equal)))
-                                   (setf (gethash source h) "hack")
-                                   h)))
+  (make-instance 'eval:include-environment :file        source
+                                           :search-path search-path))
 
 (defun make-system-environment (source
                                 &key (toolchain-id (info:guess-toolchain-id))
