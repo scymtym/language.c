@@ -303,10 +303,7 @@
         atomic-type-specifier
         struct-or-union-specifier
         enum-specifier
-        typedef-name ; TODO uncomment and figure out how to make function-definition work despite it
-        )
-  #+no (:lambda (which &bounds start end)
-         (bp:node* (:type-specifier :which which :bounds (cons start end)))))
+        typedef-name))
 
 (defrule primitive-type
     (or char-type
@@ -500,12 +497,8 @@
 
 (defrule direct-declarator
     (and (or non-keyword-identifier declarator/parentheses) direct-declarator*)
-  (:destructure (name suffixes &bounds start end)
-    (if nil ; TODO suffixes
-        (bp:node* (:direct-declarator :bounds (cons start end))
-          (1 :name   name)
-          (* :suffix suffixes))
-        name)))
+  (:destructure (name suffixes &bounds start)
+    (maybe-apply-suffix name suffixes start)))
 
 (defrule direct-declarator*
     (* (or direct-declarator/bracket
