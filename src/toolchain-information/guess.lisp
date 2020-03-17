@@ -33,11 +33,18 @@
           (software-type    (guess-software-type))
           (userland-type    (guess-userland-type
                              compiler-type machine-type software-type)))
+  "Guess and return toolchain information for the local machine.
+
+   Return a list of five values: 1) a string designating the C
+   compiler type 2) a string designating the C compiler version 3) a
+   string indicating the machine type 4) a string indicating
+   the (operating system) software type 5) a string indicating the
+   userland type."
   (list compiler-type compiler-version
         machine-type software-type userland-type))
 
 (defun make-toolchain-id (compiler-type compiler-version
-                          machine-type software-type userland-type)
+                          machine-type software-type userland-type)  
   (format nil "~A-~A-~A-~A-~A"
           compiler-type compiler-version
           machine-type software-type userland-type))
@@ -45,6 +52,14 @@
 (defun guess-toolchain-id
     (&rest args &key compiler-type compiler-version
                      machine-type software-type userland-type)
+  "Guess and return a toolchain id for the local machine.
+
+   Return a string of the form \"CT-CV-MT-ST-UT\" where
+   CT is the compiler type
+   CV is the compiler version
+   MT is the machine type
+   ST is the (operating system) software type
+   UT is the userland type."
   (declare (ignore compiler-type compiler-version
                    machine-type software-type userland-type))
   (apply #'make-toolchain-id (apply #'guess-toolchain args)))
