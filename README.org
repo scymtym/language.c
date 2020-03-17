@@ -105,8 +105,8 @@
       (ql:quickload '#:language.c.preprocessor.parser)
     #+END_SRC
 
-    After loading that system, a inputs such as strings and files can
-    be parsed using the ~parse~ generic function:
+    After loading that system, inputs such as strings and files can be
+    parsed using the ~parse~ generic function:
 
     #+BEGIN_SRC lisp :exports both :results value verbatim
       (language.c.preprocessor.parser:parse "#define foo 1 + 2" 'list)
@@ -209,4 +209,153 @@
 
 *** TODO Evaluating
 
-* TODO Dictionary
+* STARTED Reference
+
+  #+BEGIN_SRC lisp :results none :exports none :session "doc"
+    #.(progn
+        #1=(ql:quickload '(:model.transform.trace :alexandria :split-sequence))
+        '#1#)
+    (defun doc (symbol kind)
+      (let* ((lambda-list (sb-introspect:function-lambda-list symbol))
+             (string      (documentation symbol kind))
+             (lines       (split-sequence:split-sequence #\Newline string))
+             (trimmed     (mapcar (alexandria:curry #'string-left-trim '(#\Space)) lines)))
+        (format nil "~(~A~) ~<~{~A~^ ~}~:@>~2%~{~A~^~%~}"
+                symbol (list lambda-list) trimmed)))
+  #+END_SRC
+
+
+** DONE ~toolchain-information~ Module
+
+   This module allows storing and retrieving information about
+   compilation environments such as builtin macro definitions and
+   include search paths. The basic idea is to include this information
+   for different compilation environments and select the appropriate
+   one at runtime.
+
+   A compilation environment is characterized by a compiler type and
+   version, a hardware type, an operating system type and a "userland"
+   type:
+
+   #+BEGIN_SRC lisp :results value :exports results
+     (doc 'language.c.toolchain-information:guess-toolchain 'function)
+   #+END_SRC
+
+   #+RESULTS:
+   #+begin_example
+   guess-toolchain &KEY (COMPILER-TYPE (GUESS-COMPILER-TYPE))
+                   (COMPILER-VERSION (GUESS-COMPILER-VERSION COMPILER-TYPE))
+                   (MACHINE-TYPE (GUESS-MACHINE-TYPE))
+                   (SOFTWARE-TYPE (GUESS-SOFTWARE-TYPE))
+                   (USERLAND-TYPE
+                    (GUESS-USERLAND-TYPE COMPILER-TYPE MACHINE-TYPE SOFTWARE-TYPE))
+
+   Guess and return toolchain information for the local machine.
+
+   Return a list of five values: 1) a string designating the C
+   compiler type 2) a string designating the C compiler version 3) a
+   string indicating the machine type 4) a string indicating
+   the (operating system) software type 5) a string indicating the
+   userland type.
+   #+end_example
+
+   #+BEGIN_SRC lisp :results value :exports results
+     (doc 'language.c.toolchain-information:guess-toolchain-id 'function)
+   #+END_SRC
+
+   #+RESULTS:
+   #+begin_example
+   guess-toolchain-id &REST ARGS &KEY COMPILER-TYPE COMPILER-VERSION MACHINE-TYPE
+                      SOFTWARE-TYPE USERLAND-TYPE
+
+   Guess and return a toolchain id for the local machine.
+
+   Return a string of the form "CT-CV-MT-ST-UT" where
+   CT is the compiler type
+   CV is the compiler version
+   MT is the machine type
+   ST is the (operating system) software type
+   UT is the userland type.
+   #+end_example
+
+   Information for different compilation environments can be stored
+   and retrieved, indexed by toolchain ids:
+
+   #+BEGIN_SRC lisp :results value :exports results
+     (doc 'language.c.toolchain-information:find-information 'function)
+   #+END_SRC
+
+   #+RESULTS:
+   #+begin_example
+   find-information ID &KEY (IF-DOES-NOT-EXIST #'ERROR)
+
+   Return information for the toolchain designated by ID.
+
+   IF-DOES-NOT-EXIST controls the behavior in cases no information is
+   available for the supplied ID. If the value is a function or the
+   symbol `cl:error', it is called with an error condition as the sole
+   argument. Otherwise the supplied value is returned from
+   `find-information'.
+
+   The returned information is a plist which at least contains the
+   following properties:
+
+   1) Key `:search-path', value a list of pathnames with form the
+   compiler search path for includes. Elements closer to the head
+   of the list aught to be tried before elements closer to the
+   tail.
+
+   2) Key `:builtin-macros', value a function that can be called with
+   an environment as the sole argument. The function adds macro
+   entries to the supplied environment and returns the modified
+   environment.
+
+   The returned value is mainly intended to be used with
+   `augment-environment!'.
+   #+end_example
+
+   #+BEGIN_SRC lisp :results value :exports results
+     (doc 'language.c.toolchain-information:register-information 'function)
+   #+END_SRC
+
+   #+begin_example:
+   register-information ID SEARCH-PATH BUILTIN-MACROS
+
+   Install SEARCH-PATH and BUILTIN-MACROS as information for ID.
+
+   The values of SEARCH-PATH and BUILTIN-MACROS should conform to the
+   description given for `find-information'.
+
+   Existing information for ID is replaced.
+   #+end_example
+
+   Toolchain information can be used to augment an environment in
+   order to impersonate that toolchain when processing C code:
+
+   #+BEGIN_SRC lisp :results value :exports results
+     (doc 'language.c.toolchain-information:augment-environment! 'function)
+   #+END_SRC
+
+   #+RESULTS:
+   #+begin_example
+   augment-environment! ENVIRONMENT INFORMATION &KEY SEARCH-PATH
+
+   Augment ENVIRONMENT with toolchain information INFORMATION.
+
+   In more detail, builtin macro definitions and include search path
+   entries from INFORMATION are added to ENVIRONMENT.
+
+   If SEARCH-PATH is supplied, the supplied value is used instead of
+   the one contained in INFORMATION. In either case, the previous
+   search path of ENVIRONMENT is replaced, not augmented.
+
+   Return destructively modified ENVIRONMENT
+   #+end_example
+
+** TODO ~preprocessor~ Modules
+
+*** TODO ~preprocessor.model~ Module
+
+*** TODO ~preprocessor.parser~ Module
+
+*** TODO ~preprocessor.evaluator~ Module
