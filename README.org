@@ -352,10 +352,49 @@
    Return destructively modified ENVIRONMENT
    #+end_example
 
-** TODO ~preprocessor~ Modules
+** STARTED ~preprocessor~ Modules
 
-*** TODO ~preprocessor.model~ Module
+*** STARTED ~preprocessor.model~ Module
+
+    This module contains generic functions and classes for
+    representing and working with abstract syntax trees for the C
+    preprocessor language.
 
 *** TODO ~preprocessor.parser~ Module
 
+    This module contains functions for parsing the C preprocessor
+    language. The parser consists of a collection of grammar rules
+    that are implicitly by the high-level interface but can also be
+    used directly to parse specific parts of the language.
+
+    The high-level interface mainly provides the following function:
+
+    #+BEGIN_SRC lisp :results value :exports results
+      (doc 'language.c.preprocessor.parser:parse 'function)
+    #+END_SRC
+
+    #+RESULTS:
+    #+begin_example
+    parse INPUT BUILDER &KEY RULE
+
+    Parse INPUT according to RULE, return result built with BUILDER.
+
+    INPUT has to be convertible to a sequences characters. As such,
+    strings, streams and pathnames are always supported while methods
+    for other types of inputs may be defined.
+
+    BUILDER controls the construction of the result (usually a parse
+    tree) that the function will return in case of a successful
+    parse.
+
+    RULE, if supplied, specifies (generally restricts) the part of the
+    grammar that should be used for parsing INPUT. This allows, for
+    example, checking whether a given input conforms to the syntax of
+    a specific element of the language.
+    #+end_example
+
 *** TODO ~preprocessor.evaluator~ Module
+
+** TODO ~c~ Modules
+
+*** TODO ~c.parser~ Module
