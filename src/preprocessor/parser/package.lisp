@@ -48,9 +48,11 @@
 
    #:constant-expression)
 
+  ;; Parser protocol
   (:export
    #:parse)
 
+  ;; Exported rules
   (:export
    #:preprocessing-file
 
